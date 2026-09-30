@@ -7,8 +7,15 @@ from pathlib import Path
 from time import perf_counter
 from typing import Annotated, Any, Literal, Self, TypeAlias, TypeVar, cast
 
+import numpy as np
 import torch
-from pydantic import BaseModel, Field, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 
 from owl.config import BaseConfig
 from owl.game import GameActions, GameObsBatch, GameVectorizedEnv
@@ -194,6 +201,25 @@ class PPOConfig(BaseConfig):
     # bootstrap (reward 0, no terminal). Currently stateless-model only.
     truncation_step: int | None = Field(default=None, ge=1)
     truncation_prob: float = Field(default=0.0, ge=0.0, le=1.0)
+    # Stagger game phases (Kaggriculture only). Every env's FIRST game is cut at
+    # a per-env step drawn from the run seed and the global env index
+    # (``initial_stagger_steps``) through the truncation path above: the critic
+    # bootstraps the cut, the cut game publishes no game-end metrics, and every
+    # later game runs to its natural end. Envs then sit in different game
+    # phases, so each rollout mixes all phases and carries game ends. The model
+    # sees nothing new: the cut resets the env like any truncation. False (the
+    # default) is omitted from the config dump, so existing configs keep their
+    # config.yaml and v3/config_sha256.
+    initial_stagger: bool = False
+
+    @model_serializer(mode="wrap")
+    def _omit_default_initial_stagger(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        if not self.initial_stagger:
+            del data["initial_stagger"]
+        return data
 
     @model_validator(mode="after")
     def _validate_teacher_config(self) -> Self:
@@ -207,7 +233,83 @@ class PPOConfig(BaseConfig):
             raise ValueError(
                 "rl.truncation_step is required when rl.truncation_prob > 0"
             )
+        if self.initial_stagger and (
+            self.truncation_prob > 0.0 or self.truncation_step is not None
+        ):
+            raise ValueError(
+                "rl.initial_stagger cuts only each env's first game and cannot be "
+                "combined with rl.truncation_prob/rl.truncation_step"
+            )
         return self
+
+
+# Domain tag of the stagger stream: offsets never share a numpy seed sequence
+# with anything else drawn from (seed, env index).
+_STAGGER_STREAM = 0x5747_4752  # "SWGR"
+# Game-phase telemetry buckets under rl.initial_stagger: six equal slices of a
+# game (120 of the 720 turns, five in-game days, per bucket).
+STAGGER_PHASE_BUCKETS = 6
+
+
+@dataclass(frozen=True)
+class InitialStagger:
+    """``rl.initial_stagger`` inputs for one rank's ``PPOTrainer``.
+
+    ``first_game_steps[i]`` is the env step (1..game_steps) at which env ``i``'s
+    first game is cut; ``game_steps`` is a game's natural length in env steps
+    (the native engine ends an ``episodeSteps`` game after ``episodeSteps - 1``
+    transitions). An offset equal to ``game_steps`` coincides with the natural
+    end, so that env keeps phase 0 and its first game completes normally; the
+    phase is then uniform over all ``game_steps`` residues.
+    """
+
+    first_game_steps: torch.Tensor
+    game_steps: int
+
+    def __post_init__(self) -> None:
+        steps = self.first_game_steps
+        if steps.dtype != torch.long or steps.ndim != 1:
+            raise ValueError("first_game_steps must be a 1-D int64 tensor")
+        if self.game_steps < 1:
+            raise ValueError(f"game_steps must be >= 1, got {self.game_steps}")
+        if bool((steps < 1).any()) or bool((steps > self.game_steps).any()):
+            raise ValueError(f"first_game_steps must lie in 1..{self.game_steps}")
+
+
+def initial_stagger_steps(
+    *, seed: int, rank: int, n_envs: int, episode_steps: int
+) -> InitialStagger:
+    """Deterministic first-game cut steps of one rank's envs.
+
+    Env ``i`` of ``rank`` has the global index ``g = rank * n_envs + i``; its
+    offset is one uniform draw from ``1..episode_steps - 1`` (the game's length
+    in env steps) seeded by ``(seed, _STAGGER_STREAM, g)`` alone, so it does not
+    depend on the world size or on any other env, and ranks draw different
+    offsets.
+    """
+    for name, value in (("seed", seed), ("rank", rank), ("n_envs", n_envs)):
+        if type(value) is not int or value < 0:
+            raise ValueError(f"{name} must be a non-negative int, got {value!r}")
+    if n_envs < 1:
+        raise ValueError("n_envs must be >= 1")
+    game_steps = episode_steps - 1
+    if game_steps < 1:
+        raise ValueError(
+            "rl.initial_stagger needs games of at least one env step "
+            f"(episodeSteps >= 2), got episodeSteps={episode_steps}"
+        )
+    offsets = [
+        int(
+            np.random.default_rng(
+                [seed, _STAGGER_STREAM, rank * n_envs + env]
+            ).integers(1, game_steps, endpoint=True)
+        )
+        for env in range(n_envs)
+    ]
+    return InitialStagger(
+        first_game_steps=torch.tensor(offsets, dtype=torch.long),
+        game_steps=game_steps,
+    )
 
 
 @dataclass(frozen=True)
@@ -652,6 +754,7 @@ class PPOTrainer:
         teacher_model: BaseModelAPI[Any, Any, Any] | None = None,
         teacher_active: bool = False,
         distributed_context: DistributedContext | None = None,
+        initial_stagger: InitialStagger | None = None,
     ) -> None:
         self.env = env
         self.model = model
@@ -712,9 +815,22 @@ class PPOTrainer:
             learner_mask = cast(KaggricultureVectorizedEnv, env).learner_mask
             self._learner_host = learner_mask.clone()
             self._learner = learner_mask.to(device=device, copy=True)
+        if config.initial_stagger != (initial_stagger is not None):
+            raise ValueError(
+                "rl.initial_stagger requires the InitialStagger offsets "
+                "(initial_stagger_steps), and the offsets require it"
+            )
+        if initial_stagger is not None and initial_stagger.first_game_steps.shape != (
+            env.n_envs,
+        ):
+            raise ValueError(
+                "initial_stagger.first_game_steps must have shape "
+                f"({env.n_envs},), got {tuple(initial_stagger.first_game_steps.shape)}"
+            )
+        self._stagger = initial_stagger
         self._truncation_enabled = (
             config.truncation_prob > 0.0 and config.truncation_step is not None
-        )
+        ) or initial_stagger is not None
         if self._truncation_enabled and self._hidden_state is not None:
             raise NotImplementedError(
                 "rl.truncation is currently only supported for stateless models"
@@ -725,16 +841,41 @@ class PPOTrainer:
         # span multiple horizons. Allocated on the training device only when
         # truncation is enabled; left as empty placeholders otherwise so a
         # CUDA-device trainer without truncation does not touch the GPU here.
+        # ``_truncation_at`` is each env's cut step: rl.truncation_step for
+        # every game, or under rl.initial_stagger the first game's offset (only
+        # the first game is flagged, so later games are never cut).
         if self._truncation_enabled:
             self._env_step_count = torch.zeros(
                 env.n_envs, dtype=torch.long, device=device
             )
-            self._is_truncation_game = (
-                torch.rand(env.n_envs, device=device) < config.truncation_prob
-            )
+            if initial_stagger is not None:
+                self._truncation_at = initial_stagger.first_game_steps.to(device)
+                self._is_truncation_game = torch.ones(
+                    env.n_envs, dtype=torch.bool, device=device
+                )
+            else:
+                assert config.truncation_step is not None
+                self._truncation_at = torch.full(
+                    (env.n_envs,), config.truncation_step, device=device
+                )
+                self._is_truncation_game = (
+                    torch.rand(env.n_envs, device=device) < config.truncation_prob
+                )
         else:
             self._env_step_count = torch.zeros(0, dtype=torch.long)
+            self._truncation_at = torch.zeros(0, dtype=torch.long)
             self._is_truncation_game = torch.zeros(0, dtype=torch.bool)
+        # Stagger telemetry, per rollout on this rank: acted observations per
+        # game-phase bucket, natural game ends and first-game cuts.
+        # CPU placeholders without the stagger, like the truncation state above.
+        stagger_device = device if initial_stagger is not None else torch.device("cpu")
+        self._phase_counts = torch.zeros(
+            STAGGER_PHASE_BUCKETS if initial_stagger is not None else 0,
+            dtype=torch.long,
+            device=stagger_device,
+        )
+        self._game_ends = torch.zeros((), dtype=torch.long, device=stagger_device)
+        self._stagger_cuts = torch.zeros((), dtype=torch.long, device=stagger_device)
         self.teacher_model: BaseModelAPI[Any, Any, Any] | None = None
         self.teacher_active = False
         # model.critic_offset: the rollout also stores each value's offset for
@@ -936,6 +1077,8 @@ class PPOTrainer:
         metrics.update(env_metrics_logged)
         if isinstance(self._obs, KaggricultureObsBatch):
             metrics.update(self._self_play_bank_metrics(env_metrics))
+        if self._stagger is not None:
+            metrics.update(self._stagger_metrics())
         elapsed = self._max_float(max(perf_counter() - start, 1e-12))
         rollout_elapsed = self._max_float(rollout_elapsed)
         teacher_elapsed = self._max_float(teacher_elapsed)
@@ -1114,6 +1257,10 @@ class PPOTrainer:
     def _collect_rollout(self) -> torch.Tensor:
         self.rollout.rewards.zero_()
         self.rollout.dones.zero_()
+        if self._stagger is not None:
+            self._phase_counts.zero_()
+            self._game_ends.zero_()
+            self._stagger_cuts.zero_()
         self.rollout.initial_hidden_state = self.model.detach_hidden_state(
             self._hidden_state
         )
@@ -1203,9 +1350,38 @@ class PPOTrainer:
             self._last_env_metrics = env_metrics
             return last_values.detach()
 
+    def _stagger_metrics(self) -> dict[str, float]:
+        """Global phase mix, game ends and cuts of the last rollout (stagger only).
+
+        ``train/game_phase_frac_{k}`` is the fraction of acted env observations
+        whose game step lies in the k-th of ``STAGGER_PHASE_BUCKETS`` equal
+        slices of a game. ``train/game_ends`` counts completed games (those that
+        publish bank telemetry) and ``train/stagger_cuts`` the first games cut.
+        """
+        local = torch.cat(
+            [
+                self._phase_counts,
+                self._game_ends.view(1),
+                self._stagger_cuts.view(1),
+            ]
+        )
+        total = all_reduce_sum(local, self.distributed_context).cpu()
+        acted = int(total[:STAGGER_PHASE_BUCKETS].sum())
+        metrics = {
+            f"train/game_phase_frac_{bucket}": int(total[bucket]) / acted
+            for bucket in range(STAGGER_PHASE_BUCKETS)
+        }
+        metrics["train/game_ends"] = float(total[STAGGER_PHASE_BUCKETS])
+        metrics["train/stagger_cuts"] = float(total[STAGGER_PHASE_BUCKETS + 1])
+        return metrics
+
     def _resample_truncation_games(self, env_mask: torch.Tensor) -> None:
         """Redraw the per-game truncation flag for envs that started a new game."""
         if not bool(env_mask.any()):
+            return
+        if self._stagger is not None:
+            # Only each env's first game is staggered: a new game is never cut.
+            self._is_truncation_game = self._is_truncation_game & ~env_mask
             return
         draws = (
             torch.rand(self.n_envs, device=self.device) < self.config.truncation_prob
@@ -1223,26 +1399,36 @@ class PPOTrainer:
         """Time-limit truncation with critic bootstrapping.
 
         Advances per-env step counters, redraws truncation flags for naturally
-        reset games, then for each selected game that just reached
-        ``truncation_step`` (and did not naturally terminate): evaluates the
+        reset games, then for each selected game that just reached its cut step
+        (``rl.truncation_step``, or under ``rl.initial_stagger`` the env's
+        first-game offset) and did not naturally terminate: evaluates the
         critic on the truncated state to use as the GAE bootstrap and cuts the
         trajectory with ``_cut_truncated_envs_`` (whose reward rule is the
         game's), then resets the env. ``rewards`` and ``dones`` are modified in
         place. Returns per-step ``truncated`` flags and ``bootstrap_values`` for
         the rollout buffer.
         """
-        truncation_step = self.config.truncation_step
-        assert truncation_step is not None  # guaranteed by _truncation_enabled
         env_done = dones.all(dim=1)
+        if self._stagger is not None:
+            # The acted observation's game step, before this transition.
+            buckets = (
+                self._env_step_count * STAGGER_PHASE_BUCKETS // self._stagger.game_steps
+            ).clamp_(max=STAGGER_PHASE_BUCKETS - 1)
+            self._phase_counts += torch.bincount(
+                buckets, minlength=STAGGER_PHASE_BUCKETS
+            )
+            self._game_ends += env_done.sum()
         self._env_step_count += 1
         self._env_step_count[env_done] = 0
         self._resample_truncation_games(env_done)
 
         trunc_mask = (
-            (self._env_step_count >= truncation_step)
+            (self._env_step_count >= self._truncation_at)
             & self._is_truncation_game
             & ~env_done
         )
+        if self._stagger is not None:
+            self._stagger_cuts += trunc_mask.sum()
         if not bool(trunc_mask.any()):
             return (
                 torch.zeros_like(dones),

@@ -71,7 +71,11 @@ from owl.train.logging import (
     WandbRunFacts,
 )
 from owl.train.optimizer import CompositeOptimizer
-from owl.train.ppo import CHECKPOINT_KEYS, OPTIONAL_CHECKPOINT_KEYS
+from owl.train.ppo import (
+    CHECKPOINT_KEYS,
+    OPTIONAL_CHECKPOINT_KEYS,
+    initial_stagger_steps,
+)
 
 _RUN_PPO_PATH = Path(__file__).parents[2] / "scripts" / "run_ppo.py"
 _RUN_PPO_SPEC = importlib.util.spec_from_file_location("run_ppo", _RUN_PPO_PATH)
@@ -4362,9 +4366,10 @@ def _run_functional_check(
     threshold: float,
     extra_overrides: tuple[str, ...] = (),
     episode_steps: int = _FUNCTIONAL_EPISODE_STEPS,
+    horizon: int = _FUNCTIONAL_HORIZON,
 ) -> tuple[dict[str, Any], dict[str, torch.Tensor], _FakeLogger]:
     n_envs = 2
-    update_steps = _FUNCTIONAL_HORIZON * n_envs
+    update_steps = horizon * n_envs
     # Task 4.4: a fresh Kaggriculture last-best launch names its teacher.
     teacher = _kaggriculture_teacher_checkpoint(tmp_path)
     argv = [
@@ -4373,7 +4378,7 @@ def _run_functional_check(
         "--max-env-steps",
         str(_FUNCTIONAL_UPDATES * update_steps),
         "-o",
-        f"rl.horizon={_FUNCTIONAL_HORIZON}",
+        f"rl.horizon={horizon}",
         f"env.config.episodeSteps={episode_steps}",
         f"rl.teacher_init={teacher}",
         *extra_overrides,
@@ -4744,6 +4749,94 @@ def test_critic_offset_with_the_own_bank_reward_two_update_run_through_main(
             action_spec=cfg.env.action_spec,
         )
         rebuilt.load_state_dict(state, strict=True)
+
+
+def test_stagger_credit_two_update_run_through_main(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The bank_critic_credit presets' settings through the canonical trainer.
+
+    configs/kaggriculture_4rank_bank_critic_credit.yaml's reward, stagger and
+    lambda 1 on the tiny CPU model, at a horizon of 4 (the presets use 256).
+    Six-step games have five transitions; with env.seed 0 the offsets of the
+    two envs are [4, 2], so update 1 cuts both first games (transitions 4 and
+    2) and update 2 completes env 1's second game (transition 7).
+    """
+    torch.manual_seed(373)
+    session, initial, logger = _run_functional_check(
+        tmp_path,
+        monkeypatch,
+        threshold=0.0,
+        horizon=4,
+        extra_overrides=(
+            "rl.initial_stagger=true",
+            "rl.gae_lambda=1.0",
+            "env.reward_shaping.econ_shaping=0.0",
+            "env.reward_shaping.econ_bank_weight=0.25",
+            "env.reward_shaping.econ_bank_scale=150000.0",
+            "env.reward_shaping.econ_bank_cap=0.25",
+            "env.reward_shaping.econ_margin_weight=0.25",
+            "env.reward_shaping.econ_margin_scale=100000.0",
+            "env.reward_shaping.econ_margin_cap=0.25",
+        ),
+    )
+    cfg = session["cfg"]
+    assert isinstance(cfg, FullConfig)
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    assert cfg.rl.initial_stagger
+    assert cfg.env.reward_shaping.terminal_scale == 0.5
+    trainer = session["trainer"]
+    assert isinstance(trainer, PPOTrainer)
+    assert trainer._stagger is not None
+    assert trainer._stagger.first_game_steps.tolist() == [4, 2]
+    # The run's config.yaml records the stagger (it is omitted only when off).
+    run_dir = session["run_dir"]
+    assert isinstance(run_dir, Path)
+    saved = yaml.safe_load((run_dir / "config.yaml").read_text(encoding="utf-8"))
+    assert saved["rl"]["initial_stagger"] is True
+    training_logs = [metrics for metrics, _step in logger.logged[0::2]]
+    assert len(training_logs) == _FUNCTIONAL_UPDATES
+    for metrics in training_logs:
+        assert all(math.isfinite(value) for value in metrics.values())
+        assert sum(metrics[f"train/game_phase_frac_{k}"] for k in range(6)) == (
+            pytest.approx(1.0)
+        )
+    assert [m["train/stagger_cuts"] for m in training_logs] == [2.0, 0.0]
+    assert [m["train/game_ends"] for m in training_logs] == [0.0, 1.0]
+    # Cut games publish no bank telemetry; the completed one does.
+    assert [m["train/bank_games"] for m in training_logs] == [0.0, 1.0]
+    assert "train/own_bank_mean" in training_logs[1]
+    assert not _states_equal(initial, run_ppo.unwrap_model(trainer.model).state_dict())
+
+
+def test_initial_stagger_offsets_follow_the_launch_rank() -> None:
+    """Each rank builds its own offsets; a rank-0-only draw would re-lockstep ranks."""
+    cfg = FullConfig.from_file(_CONFIGS / "kaggriculture_4rank_bank_critic_credit.yaml")
+    assert isinstance(cfg.env, KaggricultureEnvConfig)
+    by_rank: list[tuple[int, ...]] = []
+    for rank in range(4):
+        context = run_ppo.DistributedContext(
+            device=torch.device("cpu"),
+            rank=rank,
+            local_rank=rank,
+            world_size=4,
+            initialized=False,
+        )
+        stagger = run_ppo._initial_stagger(cfg, context)
+        assert stagger is not None
+        expected = initial_stagger_steps(
+            seed=cfg.env.seed,
+            rank=rank,
+            n_envs=cfg.env.n_envs,
+            episode_steps=cfg.env.config.episode_steps,
+        )
+        assert torch.equal(stagger.first_game_steps, expected.first_game_steps)
+        by_rank.append(tuple(stagger.first_game_steps.tolist()))
+    assert len(set(by_rank)) == 4
+    off = cfg.model_copy(
+        update={"rl": cfg.rl.model_copy(update={"initial_stagger": False})}
+    )
+    assert run_ppo._initial_stagger(off, _distributed_context(4)) is None
 
 
 def test_last_best_evaluation_env_never_hosts_the_training_opponent() -> None:

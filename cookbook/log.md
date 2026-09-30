@@ -27,6 +27,43 @@ Default off is byte-identical to `3e89425` in its native, trainer (`3ffd53a0…`
 
 Added the [[decisions/add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset Decision]] and its index entry. Corrected the [[decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates|term A Decision]]'s claim that the two seat values "always sum to 0": the seats' rows are separate softmaxes, and the hard limits are the (−1, 1) range and the winner semantic. `docs/rl-api-specs.md` and `docs/kaggriculture-contract.md` are corrected to match.
 
+## 2026-09-30 — Commit the stagger review r1 (APPROVE) and its test and wording follow-ups
+
+An independent Claude review of `kg/rebuild-stagger-credit` `ba2c089` (`ops/stagger-credit/review-r1.md`) returned VERDICT APPROVE with no P1. Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. The report is committed with author follow-ups, which change only tests, comments and cookbook wording:
+- **P3-2.** Two tests pin the per-rank offsets built by `run_ppo._initial_stagger` and the `all_reduce_sum` in `_stagger_metrics`. The surviving mutations M9 and M11 now fail them (`ops/stagger-credit/r1-followup-mutation.log`).
+- **P3-3.** The preset header and the [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]] now say 64 global envs, not 256, and a test checks the coverage of those offsets.
+- **P2-1 and P2-2** stay merge and launch conditions, recorded in the Decision: the offset critic comes with the critic-offset landing, and the 16-game promotion is either fixed or named as a confound.
+
+These follow-ups were not independently re-reviewed.
+
+## 2026-09-30 — Stagger game phases (rl.initial_stagger) and add the 256-step, λ = 1 credit presets
+
+Owner, verbatim, quoting the main agent's list of what a per-player critic does not fix: "- Lockstep game phases and the short credit window for long-payback investments. for sure." Earlier: "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?"
+
+On `kg/rebuild-stagger-credit`, cut from `kg/isaiah-gap-closure` `3e89425`, beside the critic-offset branch:
+- **Stagger.** `rl.initial_stagger` (default false, omitted from the dump) cuts each env's first game at `u` from `initial_stagger_steps(env.seed, rank, n_envs, episodeSteps)`, uniform over 1..719 per global env. It goes through the stateless truncation path, now with a per-env cut step `_truncation_at`.
+  - The critic bootstraps the cut, and a cut publishes no bank telemetry.
+  - Later games run to their natural end.
+  - New keys: `train/game_phase_frac_{0..5}`, `train/game_ends` and `train/stagger_cuts`.
+- **Presets.** `configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` combine:
+  - the owner-approved bank + margin + sign reward (0.25/150,000/0.25, 0.25/100,000/0.25, `terminal_scale` 0.5);
+  - the stagger, `horizon` 256 and `gae_lambda` 1.0;
+  - `n_envs`/`segments_per_minibatch` of 16/1 and 32/2, which keep 16,384 env steps, 16 optimizer steps and the per-rank minibatch and teacher rows per iteration.
+
+  The values are plan F2/F3 targets, not owner-given. `model.critic_offset` is left for when that branch lands.
+
+Records:
+- The new [[decisions/stagger-game-phases-and-lengthen-the-credit-window|stagger Decision]] and the decisions index.
+- The [[references/evaluation-and-truncation-follow-the-kaggriculture-objective|truncation Reference]]'s stale "untested for Kaggriculture" gap, revised in place.
+- `docs/rl-api-specs.md`, `docs/kaggriculture-contract.md` and `README.md`.
+
+Checks:
+- 15 new tests in `tests/kaggriculture/test_initial_stagger.py` and a two-update `run_ppo.main` test.
+- Default-off native and trainer digests (`OMP_NUM_THREADS=2`) and every preset's `config_sha256` equal the base (`ops/stagger-credit-2026-09-30/digests.md`).
+- Full `just prepare` exits 0: root Rust 298 passed with 5 ignored plus the engine and opponent crates, Python 2,960 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh (`ops/stagger-credit-2026-09-30/prepare.log`; the gitignored Orbit replay fixtures were copied from the integration worktree).
+
+Unmeasured: GPU memory and time, rollout time at 256 × 32-row forwards, GAE compile time. Last-best evaluation drops to 16 games at 4 ranks. Nothing was trained, and no pod was touched.
+
 ## 2026-09-30 — Land the fixed-opponent collection and the cha22 anchor presets onto the integration, after the vs-cha22 pre-landing launch
 
 `kg/rebuild-opponent-mix` `0962744` merges onto `kg/isaiah-gap-closure` `8f17259` as the regular merge commit `cab06c9` (`--no-ff`). It carries the [[decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]] (owner: "OK, for fixed bot, we can use cha22"), the hosted Cha22 import and `configs/kaggriculture_{4,2}rank_vs_cha22.yaml`. Only `cookbook/log.md` and the decisions and references indexes conflicted; both sides were kept, with log entries in commit-time order. Full `just prepare` on the merge exits 0: root Rust 298 passed with 5 ignored plus the other crates, Python 2,934 passed with 9 skipped, plus ruff, mypy, markdown lint and docs-fresh, and the formatters changed no file (`ops/opponent-mix/prepare-landing.log`). Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Reports: `ops/opponent-mix/review-r1.md` (APPROVE on `0f70773`) and `ops/opponent-mix/verify-followups.md` (APPROVE on `71daf36`; P3-2, P3-4 and P3-5 stay open as documented limits). At the owner's "Sure you can just launch the same reward on CHA22 run now?", the vs-cha22 run launched before this landing, from `0f70773`; the later commits changed only tests, docs and receipts, and the merge's only other non-doc change is the test-only `src/kaggriculture/env_tests.rs`. The Decision gains a landing section, and the decisions index is updated. Nothing was trained by the landing.

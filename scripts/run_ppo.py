@@ -107,10 +107,12 @@ from owl.train.optimizer import (
 from owl.train.ppo import (
     CHECKPOINT_KEYS,
     OPTIONAL_CHECKPOINT_KEYS,
+    InitialStagger,
     PPOCheckpointMetadata,
     _mean_env_metrics,
     _obs_to_device,
     forward_learner_rows,
+    initial_stagger_steps,
     reject_unknown_checkpoint_keys,
 )
 from owl.train.utils import (
@@ -339,6 +341,7 @@ def main() -> None:
             teacher_model=fixed_teacher_model,
             teacher_active=fixed_teacher_model is not None,
             distributed_context=distributed,
+            initial_stagger=_initial_stagger(cfg, distributed),
         )
         start_env_steps = 0
         resume_run_id: str | None = None
@@ -1367,6 +1370,27 @@ def _fresh_state_keys_for_mode(
             f"KaggricultureTransformer only, got {type(model).__name__}"
         )
     return frozenset(f"critic_head.{key}" for key in model.critic_head.state_dict())
+
+
+def _initial_stagger(
+    cfg: FullConfig, distributed: DistributedContext
+) -> InitialStagger | None:
+    """This rank's first-game cut steps under ``rl.initial_stagger``, else None.
+
+    Seeded by ``env.seed`` and the global env index, so every launch of a run
+    (fresh or resumed; each starts all envs at step 0) draws the same offsets,
+    and the ranks' offsets differ.
+    """
+    if not cfg.rl.initial_stagger:
+        return None
+    if not isinstance(cfg.env, KaggricultureEnvConfig):
+        raise ValueError("rl.initial_stagger requires a Kaggriculture env")
+    return initial_stagger_steps(
+        seed=cfg.env.seed,
+        rank=distributed.rank,
+        n_envs=cfg.env.n_envs,
+        episode_steps=cfg.env.config.episode_steps,
+    )
 
 
 def _with_runtime_gpus(cfg: FullConfig, world_size: int) -> FullConfig:

@@ -329,6 +329,13 @@ only undiscounted, and a seat's turn is one joint autoregressive action. With
 `rl.truncation_step`, an Orbit cut transition's reward is zeroed, while a
 Kaggriculture cut keeps the economic reward earned on that transition; both
 bootstrap from the critic's value of the cut state.
+`rl.initial_stagger: true` (Kaggriculture only, default false and then omitted
+from the config dump) cuts each env's first game through the same path, at a
+step drawn from `env.seed` and the global env index. Later games run to their
+natural end, so every rollout mixes game phases and carries game ends. See
+`docs/rl-api-specs.md` ("Staggered game phases") and the
+`configs/kaggriculture_{4,2}rank_bank_critic_credit.yaml` presets. Those
+presets pair the stagger with 256-step segments at `gae_lambda: 1.0`.
 `rl.first_minibatch_logratio_limit` (default `0.05` nats) is a correctness
 alarm. Before the first optimizer step of each update, the policy-weighted mean
 log-ratio of the first minibatch (replayed versus rollout log-probs, reduced

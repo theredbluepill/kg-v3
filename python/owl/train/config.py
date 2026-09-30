@@ -98,6 +98,12 @@ class FullConfig(BaseConfig):
                 )
             _validate_kaggriculture_rl(self.rl)
             _validate_kaggriculture_training(reward_mode=env.reward_mode, rl=self.rl)
+            if self.rl.initial_stagger and env.config.episode_steps < 2:
+                raise ValueError(
+                    "rl.initial_stagger needs games of at least one env step "
+                    "(env.config.episodeSteps >= 2), got "
+                    f"{env.config.episode_steps}"
+                )
         elif isinstance(model, KaggricultureTransformerConfig):
             raise ValueError(
                 "model.model_arch='kaggriculture_transformer' requires a "
@@ -106,6 +112,11 @@ class FullConfig(BaseConfig):
             )
         else:
             _validate_orbit_constraints(env, model, self.rl)
+            if self.rl.initial_stagger:
+                raise ValueError(
+                    "rl.initial_stagger is Kaggriculture-only: it reads the game "
+                    "length from env.config.episodeSteps"
+                )
         divisor = self.rl.segments_per_minibatch * self.rl.gradient_accumulation_steps
         if self.env.n_envs % divisor != 0:
             raise ValueError(

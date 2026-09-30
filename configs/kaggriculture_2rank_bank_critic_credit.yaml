@@ -1,0 +1,87 @@
+# The 2-rank twin of configs/kaggriculture_4rank_bank_critic_credit.yaml: the
+# same reward, stagger and credit window with Isaiah's world-size division, so
+# the global work is equal: env.n_envs 16 -> 32 and rl.segments_per_minibatch
+# 1 -> 2 per rank (32 x 256 x 2 = 16,384 env steps per iteration, 16 optimizer
+# steps, 2 segments x 256 = 512 env steps and 1,024 seat rows per rank per
+# optimizer step). Teacher chunk min(128, 32) x 256 x 2 = 16,384 rows, cached as
+# 1,674,575,872 B FP32 per rank, as in configs/kaggriculture_2rank.yaml.
+# Evaluation plays 32 games on rank 0 (was 128 at n_envs 128).
+# See the 4-rank preset's header for the owner's words, values and limits.
+env:
+  n_envs: 32
+  obs_spec:
+    obs_spec: kaggriculture
+    schema_version: 3
+  action_spec:
+    action_spec: kaggriculture
+    hire_limit: 241
+  reward_mode: win_loss
+  # Owner reward (2026-09-30): .25 own bank + .25 cash difference + .5 sign.
+  # Death/drought shaping (econ_shaping) is off; its coefficients are inert.
+  reward_shaping:
+    econ_shaping: 0.0
+    econ_starvation_weight: 4.0
+    econ_drought_weight: 1.0
+    econ_cap: 0.25
+    econ_ineffective_weight: 0.0
+    econ_ineffective_cap: 0.1
+    econ_bank_weight: 0.25
+    econ_bank_scale: 150000.0
+    econ_bank_cap: 0.25
+    econ_margin_weight: 0.25
+    econ_margin_scale: 100000.0
+    econ_margin_cap: 0.25
+  pin_memory: true
+  native_threads: 4
+
+model: kaggriculture
+
+optimizer:
+  optimizer: muon
+  adamw_lr: 5.0e-06
+  adamw_eps: 1.0e-05
+  weight_decay: 0.0
+  muon_lr: 0.0001
+  muon_weight_decay: 0.01
+  muon_momentum: 0.95
+  lr_schedule:
+    schedule: linear_warmup_cosine_decay
+    warmup_steps: 1000
+    decay_steps: 400_000
+    lr_min_ratio: 0.01
+
+rl:
+  # Credit window: 256-turn segments with lambda 1 (see the header).
+  horizon: 256
+  initial_stagger: true
+  # Owner decision 2026-09-30 ("cut the interval into half"): 10M global env
+  # steps; about every 610 iterations at 16,384 env steps per iteration. See
+  # cookbook/decisions/halve-the-kaggriculture-checkpoint-interval-to-10m-steps.md.
+  checkpoint_freq: 10_000_000
+  ppo_epochs: 1
+  segments_per_minibatch: 2
+  gradient_accumulation_steps: 1
+  # gamma=1.0 keeps the critic softmax well-defined
+  gamma: 1.0
+  gae_lambda: 1.0
+  clip_coef: 0.2
+  vf_clip_coef: null
+  vf_coef: 2.0
+  ent_coef: 1e-6
+  max_grad_norm: 10.0
+  target_kl: null
+  ppo_clip_mode: per_player
+  normalize_advantages: true
+  eval_replay_games: 0
+  # scaling_6m's last-best teacher, precomputed once per update over the whole
+  # rollout (1,674,575,872 B per rank, FP32, as at horizon 64 x 128 envs). The
+  # teacher checkpoint is a launch-time input (--load-model-weights or
+  # -o rl.teacher_init=CHECKPOINT).
+  teacher_mode: last_best
+  teacher_kl_coef: 0.005
+  teacher_value_coef: 0.005
+  # A chunk size, not a batch: per rank min(128, 32) = 32 envs, the whole
+  # rollout, 16,384 rows, in one precompute call.
+  teacher_segments_per_minibatch: 128
+  compile_mode: default
+  dtype: bfloat16
