@@ -5,7 +5,9 @@ model, env and logger code paths are unchanged. Records are single lines
 "[nt-probe] {json}" on stdout, tagged with RANK.
 
 - KG_NT_NUMA=1: before torch loads, bind this rank's CPU affinity and memory
-  policy (MPOL_BIND via set_mempolicy) to its GPU's NUMA node.
+  policy (MPOL_BIND via set_mempolicy) to its GPU's NUMA node. The pod's
+  container returns EPERM for set_mempolicy. KG_NT_NUMA=cpu binds the CPU
+  affinity only.
 - KaggricultureVectorizedEnv.step: wall time per call (synchronous: fence +
   native step + buffer publish).
 - PPOTrainer.train_iteration: the trainer's metrics subset, native step time
@@ -39,9 +41,13 @@ def emit(kind: str, **fields: Any) -> None:
     print("[nt-probe] " + json.dumps(record, default=str), flush=True)
 
 
-def _bind_numa() -> None:
+def _bind_numa(*, memory: bool) -> None:
     node = GPU_NODE[LOCAL_RANK]
     os.sched_setaffinity(0, NODE_CPUS[node])
+    if not memory:
+        emit("numa_bind", local_rank=LOCAL_RANK, node=node,
+             cpus=len(os.sched_getaffinity(0)), mempolicy_mode=None)
+        return
     libc = ctypes.CDLL(None, use_errno=True)
     mask = ctypes.c_ulong(1 << node)
     # x86_64: set_mempolicy = 238, get_mempolicy = 239; MPOL_BIND = 2.
@@ -61,8 +67,9 @@ def _bind_numa() -> None:
     )
 
 
-if os.environ.get("KG_NT_NUMA") == "1":
-    _bind_numa()
+# "1": CPU affinity + MPOL_BIND (EPERM in this container); "cpu": affinity only.
+if os.environ.get("KG_NT_NUMA") in ("1", "cpu"):
+    _bind_numa(memory=os.environ["KG_NT_NUMA"] == "1")
 
 import torch  # noqa: E402
 import wandb  # noqa: E402

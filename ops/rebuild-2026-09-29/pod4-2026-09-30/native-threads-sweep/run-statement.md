@@ -10,3 +10,9 @@
 - **nsys:** not used; this compares end-to-end rates across one config knob and does not attribute time inside a step.
 - **Budget:** about 20 minutes at $8.36/h (about $3). No main run is launched. The pod is left running and idle.
 - **Limits:** one 10-iteration sample per row, so run-to-run noise is not measured; the 3% tie rule absorbs some of it. Iterations 3-10 cover steps 128-640 of the first 720-step game, so no reset and no game end falls in the window, and the last 80 steps of a game are not sampled.
+
+## Addendum before the extra rows (written after rows nt2-nt16 and before launching the rows below)
+
+- Row `nt8-numa` stopped at startup on all 4 ranks: `set_mempolicy` returned EPERM (the container's syscall filter), so memory binding (and `numactl --membind`) is not available without weakening container security, which is out of scope. It is recorded as failed.
+- Added row `nt8-cpubind`: N=8 with the CPU affinity binding only (`KG_NT_NUMA=cpu`), no memory policy.
+- Added one repeat each of N=4, 8 and 2 (`nt4-r2`, `nt8-r2`, `nt2-r2`), in that order. Reason: native step ms was flat across N (about 33-46 ms per rank in every row), and the N=4 vs N=8 gap (4.2%) is close to the 3% tie line, so a second sample is needed to tell a real difference from run-to-run noise. The selection rule is then applied to the mean of the two samples for N=2, 4 and 8; N=16 keeps its one sample. Same command, same seed. About 6 more minutes (about $0.85).
