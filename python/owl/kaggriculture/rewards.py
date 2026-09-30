@@ -1,9 +1,10 @@
 """Explicit reward coefficients and independent test oracles, never live rewards.
 
 The native environment owns production reward calculation. These float64
-functions expose the contract's capped cumulative penalties and the owner's
-absolute own-bank shaping (term A, 2026-09-30) for diagnostics, telemetry and
-tests; only ``transition_rewards`` reproduces the native float32 rounding points.
+functions expose the contract's capped cumulative penalties, the owner's
+absolute own-bank shaping (term A, 2026-09-30) and the zero-sum cash-difference
+potential (term M, 2026-09-30) for diagnostics, telemetry and tests; only
+``transition_rewards`` reproduces the native float32 rounding points.
 """
 
 from __future__ import annotations
@@ -21,12 +22,16 @@ if TYPE_CHECKING:
 
 
 class KaggricultureRewardConfig(BaseConfig):
-    """Nine explicit coefficients: capped death/ineffective penalties and own bank.
+    """Twelve explicit coefficients: capped penalties, own bank and cash margin.
 
     ``econ_shaping`` is the contract's W and ``econ_cap`` its death cap.
     ``econ_bank_weight`` (w_b), ``econ_bank_scale`` (S) and ``econ_bank_cap``
     (cap_b) define the own-seat bank score ``min(cap_b, w_b * max(0, bank) / S)``
-    whose per-step difference is paid to that seat alone (not zero-sum). Reward
+    whose per-step difference is paid to that seat alone (not zero-sum).
+    ``econ_margin_weight`` (w_m), ``econ_margin_scale`` (S_m) and
+    ``econ_margin_cap`` (c_m) define the margin score
+    ``clamp(w_m * (bank_self - bank_opp) / S_m, -c_m, c_m)`` whose per-step
+    difference is paid per seat (zero-sum). Reward
     mode is owned once by ``KaggricultureEnvConfig`` and supplied at serialization.
     """
 
@@ -39,26 +44,30 @@ class KaggricultureRewardConfig(BaseConfig):
     econ_bank_weight: float = Field(ge=0, allow_inf_nan=False, strict=True)
     econ_bank_scale: float = Field(ge=0, allow_inf_nan=False, strict=True)
     econ_bank_cap: float = Field(ge=0, allow_inf_nan=False, strict=True)
+    econ_margin_weight: float = Field(ge=0, allow_inf_nan=False, strict=True)
+    econ_margin_scale: float = Field(ge=0, allow_inf_nan=False, strict=True)
+    econ_margin_cap: float = Field(ge=0, allow_inf_nan=False, strict=True)
 
-    def _active_caps(self) -> tuple[float, float, float]:
+    def _active_caps(self) -> tuple[float, float, float, float]:
         return (
             self.econ_cap if self.econ_shaping > 0 else 0.0,
             self.econ_ineffective_cap if self.econ_ineffective_weight > 0 else 0.0,
             self.econ_bank_cap if self.econ_bank_weight > 0 else 0.0,
+            self.econ_margin_cap if self.econ_margin_weight > 0 else 0.0,
         )
 
     @property
     def terminal_scale(self) -> float:
         """Return one minus the enabled caps, regardless of observed events."""
-        death_cap, ineffective_cap, bank_cap = self._active_caps()
-        # Native order: 1 - death - ineffective - bank, left to right.
-        return 1.0 - death_cap - ineffective_cap - bank_cap
+        death_cap, ineffective_cap, bank_cap, margin_cap = self._active_caps()
+        # Native order: 1 - death - ineffective - bank - margin, left to right.
+        return 1.0 - death_cap - ineffective_cap - bank_cap - margin_cap
 
     @model_validator(mode="after")
     def _validate_budget(self) -> Self:
-        death_cap, ineffective_cap, bank_cap = self._active_caps()
-        # Native order: (death + ineffective) + bank.
-        if death_cap + ineffective_cap + bank_cap >= 1:
+        death_cap, ineffective_cap, bank_cap, margin_cap = self._active_caps()
+        # Native order: ((death + ineffective) + bank) + margin.
+        if death_cap + ineffective_cap + bank_cap + margin_cap >= 1:
             raise ValueError("active economic penalty caps must sum below one")
         if self.econ_shaping > 0:
             if self.econ_cap <= 0:
@@ -84,6 +93,13 @@ class KaggricultureRewardConfig(BaseConfig):
                 "positive econ_bank_weight requires positive econ_bank_scale "
                 "and econ_bank_cap"
             )
+        if self.econ_margin_weight > 0 and (
+            self.econ_margin_scale <= 0 or self.econ_margin_cap <= 0
+        ):
+            raise ValueError(
+                "positive econ_margin_weight requires positive econ_margin_scale "
+                "and econ_margin_cap"
+            )
         return self
 
     def to_native_dict(
@@ -103,6 +119,9 @@ class KaggricultureRewardConfig(BaseConfig):
             "econ_bank_weight": self.econ_bank_weight,
             "econ_bank_scale": self.econ_bank_scale,
             "econ_bank_cap": self.econ_bank_cap,
+            "econ_margin_weight": self.econ_margin_weight,
+            "econ_margin_scale": self.econ_margin_scale,
+            "econ_margin_cap": self.econ_margin_cap,
         }
 
 
@@ -187,6 +206,33 @@ def bank_rewards(
     return bank_score(banks_after, config) - bank_score(banks_before, config)
 
 
+def margin_score(margins: Tensor, config: KaggricultureRewardConfig) -> Tensor:
+    """Return ``clamp(w_m * margin / S_m, -c_m, c_m)`` elementwise in float64.
+
+    Native operation order (product, then quotient, then clamp); an overflowing
+    product saturates at the cap. Zero when ``econ_margin_weight`` is 0.
+    """
+    if margins.dtype != torch.float64:
+        raise TypeError("margins must have dtype float64")
+    if config.econ_margin_weight <= 0:
+        return torch.zeros_like(margins)
+    raw = config.econ_margin_weight * margins / config.econ_margin_scale
+    return raw.clamp(min=-config.econ_margin_cap, max=config.econ_margin_cap)
+
+
+def margin_rewards(
+    banks_before: Tensor, banks_after: Tensor, config: KaggricultureRewardConfig
+) -> Tensor:
+    """Return each seat's margin-score increment in float64 (zero-sum)."""
+    if banks_before.shape != banks_after.shape:
+        raise ValueError("banks_before and banks_after must have identical shapes")
+    _validate_banks(banks_before, "banks_before")
+    _validate_banks(banks_after, "banks_after")
+    return margin_score(banks_after - banks_after.flip(-1), config) - margin_score(
+        banks_before - banks_before.flip(-1), config
+    )
+
+
 def terminal_rewards(banks: Tensor, config: KaggricultureRewardConfig) -> Tensor:
     """Return the scaled terminal win/loss/draw term in float64."""
     _validate_banks(banks, "banks")
@@ -207,9 +253,10 @@ def transition_rewards(
     """Model native economic f32 rounding, then terminal f64 addition and f32.
 
     The economic term is the relative penalty difference plus, only when
-    ``econ_bank_weight > 0``, the own bank-score increment, summed in float64
-    before the first f32 rounding. With the bank term off nothing is added, so
-    the result is bit-identical to the relative-only reward. The terminal term
+    ``econ_bank_weight > 0``, the own bank-score increment and, only when
+    ``econ_margin_weight > 0``, the margin-score increment, summed in float64 in
+    that order before the first f32 rounding. With both terms off nothing is
+    added, so the result is bit-identical to the relative-only reward. The terminal term
     is added only where ``dones`` is true, so the result matches native bits
     including the sign of zero.
     """
@@ -234,6 +281,8 @@ def transition_rewards(
         economic = economic + bank_rewards(banks_before, banks_after, config)
     else:
         _validate_banks(banks_before, "banks_before")
+    if config.econ_margin_weight > 0:
+        economic = economic + margin_rewards(banks_before, banks_after, config)
     economic_f32 = economic.float()
     # Add the terminal term only on terminal steps, as native does: adding a
     # +0.0 elsewhere would turn a native -0.0 economic reward into +0.0.

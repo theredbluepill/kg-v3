@@ -197,6 +197,21 @@ Training presets live in `configs/`:
   used as `rl.teacher_init`) must add `econ_bank_weight: 0.0`,
   `econ_bank_scale: 100000.0` and `econ_bank_cap: 0.0`, which reproduces its
   rewards exactly.
+- `kaggriculture_4rank_margin.yaml` (owner decision 2026-09-30, "0.5 Cash Diff
+  (add this in) + 0.5 (Terminal loss 1/-1/0)"): J/2's effective config
+  (`kaggriculture_4rank.yaml` with `muon_lr` 0.0001, `adamw_lr` 5e-6,
+  `checkpoint_freq` 10M and `native_threads` 4) with only the reward changed:
+  starvation/drought shaping off (`econ_shaping` 0), term A off, and the
+  zero-sum cash-difference term M on (`econ_margin_weight` 0.5,
+  `econ_margin_scale` 50,000, `econ_margin_cap` 0.5, so `terminal_scale` is
+  0.5). A game's return is `.5 · clamp(final margin / 50,000, −1, 1) + .5 ·
+  sign(final margin)`. The 50,000 scale is agent-proposed, see the Decision.
+  Launch it as a warm start from J/2's `checkpoint_final.pt` with
+  `--load-model-weights-mode model_and_optimizer`. Every other config sets term
+  M off (weight 0), which leaves rewards bit-identical; the trainer logs
+  `train/reward_margin_abs_mean`. A pre-change `config.yaml` must add
+  `econ_margin_weight: 0.0`, `econ_margin_scale: 50000.0` and
+  `econ_margin_cap: 0.0`.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.

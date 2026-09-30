@@ -27,6 +27,9 @@ _REWARD = {
     "econ_bank_weight": 0.0,
     "econ_bank_scale": 100000.0,
     "econ_bank_cap": 0.0,
+    "econ_margin_weight": 0.0,
+    "econ_margin_scale": 50000.0,
+    "econ_margin_cap": 0.0,
 }
 _I64_MAX = 2**63 - 1
 _DEFAULT_GAME = {

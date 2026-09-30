@@ -18,7 +18,12 @@ import pytest
 import torch
 from owl.kaggriculture import types as kt
 from owl.kaggriculture.config import KaggricultureEnvConfig
-from owl.kaggriculture.rewards import KaggricultureRewardConfig, bank_score
+from owl.kaggriculture.rewards import (
+    KaggricultureRewardConfig,
+    bank_score,
+    margin_score,
+    terminal_rewards,
+)
 from owl.model import create_model
 from owl.model import kaggriculture as km
 from owl.model.kaggriculture_teacher import TEACHER_TARGET_BYTES_PER_ROW
@@ -30,6 +35,7 @@ from owl.model.kaggriculture_workload import (
 )
 from owl.train import (
     FullConfig,
+    MuonConfig,
     NoTeacherScheduleConfig,
     OptimizerConfig,
     PPOConfig,
@@ -56,12 +62,16 @@ _BANK = {
     "kaggriculture_4rank_bc_finetune_bank.yaml": "kaggriculture_4rank_bc_finetune.yaml",
     "kaggriculture_8rank_bc_finetune_bank.yaml": "kaggriculture_8rank_bc_finetune.yaml",
 }
+# Owner term M (2026-09-30): J/2's effective config (the ranked config plus its
+# launch overrides) with the margin reward.
+_MARGIN = {"kaggriculture_4rank_margin.yaml": "kaggriculture_4rank.yaml"}
 _RANKED_AND_FINETUNE = {
     **_RANKED,
     **{name: _RANKED[base] for name, base in _FINETUNE.items()},
     **{name: _RANKED[_FINETUNE[base]] for name, base in _BANK.items()},
+    **{name: _RANKED[base] for name, base in _MARGIN.items()},
 }
-_ALL = (*_RANKED, *_FINETUNE, *_BANK, "kaggriculture.yaml")
+_ALL = (*_RANKED, *_FINETUNE, *_BANK, *_MARGIN, "kaggriculture.yaml")
 _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_shaping=0.2,
     econ_starvation_weight=4.0,
@@ -72,9 +82,20 @@ _REWARD_SHAPING = KaggricultureRewardConfig(
     econ_bank_weight=0.0,
     econ_bank_scale=100_000.0,
     econ_bank_cap=0.0,
+    econ_margin_weight=0.0,
+    econ_margin_scale=50_000.0,
+    econ_margin_cap=0.0,
 )
 _BANK_SHAPING = _REWARD_SHAPING.model_copy(
     update={"econ_bank_weight": 0.25, "econ_bank_cap": 0.25}
+)
+_MARGIN_SHAPING = _REWARD_SHAPING.model_copy(
+    update={
+        "econ_shaping": 0.0,
+        "econ_margin_weight": 0.5,
+        "econ_margin_scale": 50_000.0,
+        "econ_margin_cap": 0.5,
+    }
 )
 
 
@@ -377,6 +398,62 @@ def test_bank_preset_passes_the_startup_workload_assertion(
     assert _headroom(name) == _headroom(_FINETUNE[base])
 
 
+@pytest.mark.parametrize(("name", "base"), _MARGIN.items())
+def test_margin_preset_is_j2_apart_from_the_reward(name: str, base: str) -> None:
+    # J/2 ran the ranked config with -o optimizer.muon_lr=0.0001
+    # optimizer.adamw_lr=0.000005 rl.checkpoint_freq=10000000
+    # env.native_threads=4. Undo those overrides and the reward: the whole
+    # loaded config then equals the ranked config.
+    ours = FullConfig.from_file(ROOT / "configs" / name)
+    ranked = FullConfig.from_file(ROOT / "configs" / base)
+    assert isinstance(ours.env, KaggricultureEnvConfig)
+    assert isinstance(ranked.env, KaggricultureEnvConfig)
+    assert isinstance(ours.optimizer, MuonConfig)
+    assert isinstance(ranked.optimizer, MuonConfig)
+    shaping = ours.env.reward_shaping
+    assert (
+        shaping.econ_shaping,
+        shaping.econ_bank_weight,
+        shaping.econ_margin_weight,
+        shaping.econ_margin_scale,
+        shaping.econ_margin_cap,
+    ) == (0.0, 0.0, 0.5, 50_000.0, 0.5)
+    assert shaping.terminal_scale == 0.5
+    assert (ours.optimizer.muon_lr, ours.optimizer.adamw_lr) == (1e-4, 5e-6)
+    assert ours.rl.checkpoint_freq == ranked.rl.checkpoint_freq == 10_000_000
+    assert ours.env.native_threads == 4
+    restored = ours.model_copy(
+        update={
+            "optimizer": ours.optimizer.model_copy(
+                update={
+                    "muon_lr": ranked.optimizer.muon_lr,
+                    "adamw_lr": ranked.optimizer.adamw_lr,
+                }
+            ),
+            "env": ours.env.model_copy(
+                update={
+                    "native_threads": ranked.env.native_threads,
+                    "reward_shaping": ranked.env.reward_shaping,
+                }
+            ),
+        }
+    )
+    assert restored == ranked
+    # A whole game's return from the reset state, m(final margin) + .5 * sign,
+    # stays within [-1, 1], the zero-sum winner critic's range (2 p(self) - 1).
+    # A mid-game return-to-go subtracts m(margin_t) and can reach +-1.5; that
+    # known limit is documented, not asserted away.
+    finals = torch.tensor(
+        [[1e6, 0.0], [50_000.0, 0.0], [3_001.0, 3_000.0], [3_000.0, 3_000.0]],
+        dtype=torch.float64,
+    )
+    returns = margin_score(finals - finals.flip(-1), shaping) + terminal_rewards(
+        finals, shaping
+    )
+    assert returns[:, 0].tolist() == [1.0, 1.0, 0.5 + 0.5 / 50_000, 0.0]
+    assert torch.equal(returns[:, 0], -returns[:, 1])
+
+
 # --- teacher settings (plan Task 4.4) -------------------------------------------
 
 _TEACHER_FIELDS = (
@@ -434,6 +511,9 @@ def test_config_env_and_cross_section_rules(name: str) -> None:
     assert ours.env.reward_mode == "win_loss"
     if name in _BANK:
         assert ours.env.reward_shaping == _BANK_SHAPING
+        assert ours.env.reward_shaping.terminal_scale == 0.5
+    elif name in _MARGIN:
+        assert ours.env.reward_shaping == _MARGIN_SHAPING
         assert ours.env.reward_shaping.terminal_scale == 0.5
     else:
         assert ours.env.reward_shaping == _REWARD_SHAPING
@@ -693,6 +773,9 @@ def test_config_round_trips_through_the_kaggriculture_env_schema() -> None:
             "econ_bank_weight": 0.0,
             "econ_bank_scale": 100000.0,
             "econ_bank_cap": 0.0,
+            "econ_margin_weight": 0.0,
+            "econ_margin_scale": 50000.0,
+            "econ_margin_cap": 0.0,
         },
         "pin_memory": True,
         "native_threads": 2,

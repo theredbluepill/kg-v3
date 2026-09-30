@@ -911,7 +911,7 @@ aliases; only supplied non-null `actTimeout`, `runTimeout` and `seed` framework
 metadata is preserved. Framework seed metadata has no lifecycle effect.
 `hire_limit` is owned only by `action_spec` and is passed to native unchanged.
 
-The nine reward coefficients have a single definition in
+The twelve reward coefficients have a single definition in
 `owl.kaggriculture.rewards.KaggricultureRewardConfig`; all are required, finite
 and nonnegative. The existing `reward_shaping` field holds them, while the
 single top-level `reward_mode` remains `win_loss`. A config written before the
@@ -919,7 +919,12 @@ own-bank term (without the three `econ_bank_*` fields, such as a pre-change
 run's or BC checkpoint's sibling `config.yaml`) no longer validates, including
 as `rl.teacher_init` or for a full resume; adding `econ_bank_weight: 0.0`,
 `econ_bank_scale: 100000.0` and `econ_bank_cap: 0.0` migrates it and
-reproduces its rewards exactly. A complete example is:
+reproduces its rewards exactly. Likewise a config written before the margin
+term (without the three `econ_margin_*` fields, such as J/2's or
+`hz4bpjnq`'s run-dir `config.yaml`) needs `econ_margin_weight: 0.0`,
+`econ_margin_scale: 50000.0` and `econ_margin_cap: 0.0`, which reproduce its
+rewards exactly. A `--load-model-weights` warm start does not read the
+source's sibling config. A complete example is:
 
 ```yaml
 env:
@@ -941,6 +946,9 @@ env:
     econ_bank_weight: 0.0
     econ_bank_scale: 100000.0
     econ_bank_cap: 0.0
+    econ_margin_weight: 0.0
+    econ_margin_scale: 50000.0
+    econ_margin_cap: 0.0
 ```
 
 Inactive caps may be zero; enabled caps sum strictly below one. Positive
@@ -949,12 +957,15 @@ product `econ_shaping * econ_starvation_weight` or
 `econ_shaping * econ_drought_weight`. Positive ineffective weight requires a
 positive ineffective cap. Positive `econ_bank_weight` requires positive
 `econ_bank_scale` and `econ_bank_cap`; with the bank weight zero, scale and cap
-are only finite and nonnegative. `terminal_scale` is one minus enabled caps,
-including the bank cap. This per-component predicate intentionally strengthens
-the reference, including underflow cases. `to_native_dict(reward_mode)` produces
-the ten exact native keys. `bank_score` and `bank_rewards` are the float64
-oracle of the own-bank term (see the native reward below); the adapter uses
-`bank_rewards` for its `reward_bank_mean` step metric. The float64 economic/terminal oracles validate shapes, finite banks and
+are only finite and nonnegative. Positive `econ_margin_weight` likewise
+requires positive `econ_margin_scale` and `econ_margin_cap`. `terminal_scale`
+is one minus enabled caps, including the bank and margin caps. This
+per-component predicate intentionally strengthens the reference, including
+underflow cases. `to_native_dict(reward_mode)` produces the thirteen exact
+native keys. `bank_score` and `bank_rewards` are the float64 oracle of the
+own-bank term, and `margin_score` and `margin_rewards` that of the margin term
+(see the native reward below); the adapter uses them for its
+`reward_bank_mean` and `reward_margin_abs_mean` step metrics. The float64 economic/terminal oracles validate shapes, finite banks and
 monotonic int64 cumulative counters; only S0/D1/I2 contribute. The transition
 oracle casts the economic difference to f32, promotes to f64 for terminal
 addition, then casts to f32. It preserves native binary64 operation order:
@@ -1403,11 +1414,14 @@ sequentially on the Mac; this is a stream arithmetic test, not a distributed run
 `reward_config` must be a plain dict with exactly `reward_mode="win_loss"`,
 `econ_shaping`, `econ_starvation_weight`, `econ_drought_weight`, `econ_cap`,
 `econ_ineffective_weight`, `econ_ineffective_cap`, `econ_bank_weight`,
-`econ_bank_scale`, `econ_bank_cap`; all nine numeric coefficients are explicit,
-finite, nonnegative float64 values. Active caps, including the bank cap when
-`econ_bank_weight>0`, must sum below one (summed as death, then ineffective,
-then bank). Positive `econ_bank_weight` requires `econ_bank_scale>0` and
-`econ_bank_cap>0`. With `W=econ_shaping`, `s=econ_starvation_weight`,
+`econ_bank_scale`, `econ_bank_cap`, `econ_margin_weight`, `econ_margin_scale`,
+`econ_margin_cap`; all twelve numeric coefficients are explicit, finite,
+nonnegative float64 values. Active caps, including the bank cap when
+`econ_bank_weight>0` and the margin cap when `econ_margin_weight>0`, must sum
+below one (summed as death, then ineffective, then bank, then margin). Positive
+`econ_bank_weight` requires `econ_bank_scale>0` and `econ_bank_cap>0`; positive
+`econ_margin_weight` requires `econ_margin_scale>0` and `econ_margin_cap>0`.
+With `W=econ_shaping`, `s=econ_starvation_weight`,
 `d=econ_drought_weight`, the additional admission predicate is evaluated with
 separate IEEE-754 binary64 multiplications: if `W>0`, require `econ_cap>0` and
 `(W*s>0 or W*d>0)`; if `econ_ineffective_weight>0`, require
@@ -1423,11 +1437,16 @@ P(c) = min(econ_cap, W * (s*S + d*D))
      + min(econ_ineffective_cap, econ_ineffective_weight * I)
 delta = P(after) - P(before)
 B(bank) = min(econ_bank_cap, econ_bank_weight * max(0, bank) / econ_bank_scale)
+M(d) = clamp(econ_margin_weight * d / econ_margin_scale,
+             -econ_margin_cap, econ_margin_cap)
 economic_reward = delta_opponent - delta_self
                 + (B(bank_self_after) - B(bank_self_before) if econ_bank_weight>0)
+                + (M(bank_self_after - bank_opp_after)
+                   - M(bank_self_before - bank_opp_before) if econ_margin_weight>0)
 terminal_scale = 1 - (econ_cap if W>0 else 0)
                    - (econ_ineffective_cap if econ_ineffective_weight>0 else 0)
                    - (econ_bank_cap if econ_bank_weight>0 else 0)
+                   - (econ_margin_cap if econ_margin_weight>0 else 0)
 ```
 
 The own-bank term (owner decision 2026-09-30, "term A") pays each seat the
@@ -1444,8 +1463,44 @@ replays bit-exactly). The bank presets use weight .25, scale 100,000 and cap
 .175 and `B` saturates at a bank of 100,000. The values were proposed by the
 agent, not given by the owner (see the term A Decision).
 
+The cash-difference (margin) term (owner decision 2026-09-30, "term M": "0.5
+Cash Diff (add this in) + 0.5 (Terminal loss 1/-1/0)") pays each seat the
+change of its clamped margin score `M(bank_self − bank_opp)` over the
+transition. It uses the same before/after banks as term A, so no delta spans
+two games. `M` is evaluated as product, then quotient, then clamp to
+`[−c_m, c_m]`; an overflowing product or quotient saturates at the cap, and
+`M` is odd in the margin bit for bit, so the two seats' increments are exact
+negations: the term is zero-sum, so unlike term A it has no common-mode part
+the zero-sum winner critic cannot represent (with term A off,
+`train/return_common_mean` stays 0). Both farms reset to the same
+`startingMoney`, so a complete game's term telescopes to `M(final margin)`, and
+with `terminal_scale = 1 − c_m` (every other term off) a whole game's return
+from the reset state is `M(final margin) + (1 − c_m) · sign(final margin)`,
+within [−1, 1]. The magnitude is not bounded that way mid-game. The critic
+predicts return-to-go, `M(final margin) − M(margin_t) + terminal_scale ·
+sign(final margin)`, and because `M` is signed that spans
+`[−(2 c_m + terminal_scale), 2 c_m + terminal_scale]`, which is [−1.5, 1.5] for
+the margin preset. That is outside the critic's `2p − 1 ∈ (−1, 1)`: for example
+a seat trailing by 30k that wins by 25k has a return-to-go of +1.05. The value
+fit is therefore biased in states with a large lead or deficit that later
+reverses. Term M is the first term with a signed potential, so it is the first
+to break the bound; the effect is unmeasured (independent review r1,
+`ops/reward-margin/review-r1.md`). With
+`econ_margin_weight = 0` nothing is added, so rewards are bit-identical to the
+reward without it. In the economic sum it follows the bank term (relative,
+then bank, then margin, in float64) before the single f32 rounding. Only
+`configs/kaggriculture_4rank_margin.yaml` enables it: weight .5, scale 50,000
+and cap .5 with `econ_shaping` 0 and term A off, so `terminal_scale` is .5 and
+`M = .5 · clamp(margin / 50,000, −1, 1)`, linear up to a 50k margin. The owner
+gave the .5/.5 split; the 50,000 scale was proposed by the agent from the live
+run `hz4bpjnq`'s self-play margins (mean |margin| 10–18k), not given by the
+owner or measured optimal (see the term M Decision). The adapter's per-step
+`reward_margin_abs_mean` (the mean absolute margin component over every seat;
+its signed mean is zero) recomputes the float64 oracle when the term is on and
+is exactly 0 with it off.
+
 Disabled components short-circuit. Economic reward (relative penalties plus
-any bank term) is computed in float64 and rounded to float32 first; on terminal
+any bank and margin terms) is computed in float64 and rounded to float32 first; on terminal
 steps that float32 value is promoted to float64, the raw-bank sign times
 `terminal_scale` is added, then the result is rounded to float32 again.
 Non-terminal steps publish the float32 economic value unchanged, including a

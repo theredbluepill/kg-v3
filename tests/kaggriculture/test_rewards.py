@@ -15,6 +15,8 @@ from owl.kaggriculture.rewards import (
     bank_score,
     economic_penalty,
     economic_rewards,
+    margin_rewards,
+    margin_score,
     terminal_rewards,
     transition_rewards,
 )
@@ -38,8 +40,16 @@ _COEFFICIENTS = (
     "econ_bank_cap",
 )
 _BANK_OFF = (0.0, 100_000.0, 0.0)
-_RECIPE = dict(
-    zip(_COEFFICIENTS, (0.2, 4.0, 1.0, 0.25, 0.0, 0.1, *_BANK_OFF), strict=True)
+# Owner term M (cash-difference potential) off; the nine-coefficient tables
+# below predate it and run with it off.
+_MARGIN_OFF = {
+    "econ_margin_weight": 0.0,
+    "econ_margin_scale": 50_000.0,
+    "econ_margin_cap": 0.0,
+}
+_RECIPE = (
+    dict(zip(_COEFFICIENTS, (0.2, 4.0, 1.0, 0.25, 0.0, 0.1, *_BANK_OFF), strict=True))
+    | _MARGIN_OFF
 )
 # Owner term A at unit weight (w_b 1, S 100,000, cap_b .25), so a score reads as
 # bank / S and saturates at 25,000. Not the presets' weight: see _BANK_PRESET.
@@ -50,6 +60,14 @@ _BANK_ON = {
 }
 # The bank presets' values (w_b .25, S 100,000, cap_b .25): .25 * min(1, bank/1e5).
 _BANK_PRESET = _BANK_ON | {"econ_bank_weight": 0.25}
+# Owner term M at the margin preset's values (w_m .5, S_m 50,000, c_m .5) with
+# every other shaping term off: terminal_scale .5.
+_MARGIN_PRESET = {
+    "econ_shaping": 0.0,
+    "econ_margin_weight": 0.5,
+    "econ_margin_scale": 50_000.0,
+    "econ_margin_cap": 0.5,
+}
 # The ten original paired cases are the shared ABI table, in exactly its
 # published order, run with the bank term off. The bank rows (_BANK_CASES) follow
 # in the Rust and native tables.
@@ -92,7 +110,7 @@ def _config(**overrides: float) -> KaggricultureRewardConfig:
 def test_reward_coefficients_required_and_bounded() -> None:
     with pytest.raises(ValidationError):
         KaggricultureRewardConfig.model_validate({})
-    for name in _COEFFICIENTS:
+    for name in (*_COEFFICIENTS, *_MARGIN_OFF):
         missing = _RECIPE.copy()
         del missing[name]
         with pytest.raises(ValidationError, match=name):
@@ -132,7 +150,7 @@ def test_reward_coefficients_required_and_bounded() -> None:
 def test_reward_admission_predicate_cases(
     coefficients: tuple[float, ...], accepted: bool
 ) -> None:
-    case = dict(zip(_COEFFICIENTS, coefficients, strict=True))
+    case = dict(zip(_COEFFICIENTS, coefficients, strict=True)) | _MARGIN_OFF
     if accepted:
         assert KaggricultureRewardConfig.model_validate(case).terminal_scale > 0
     else:
@@ -168,17 +186,20 @@ def test_python_and_native_reward_admission_agree(
         "econ_bank_weight": bank_weight,
         "econ_bank_scale": bank_scale,
         "econ_bank_cap": bank_cap,
+        "econ_margin_weight": 0.0,
+        "econ_margin_scale": 50_000.0,
+        "econ_margin_cap": 0.0,
     }
     if accepted:
         config = KaggricultureRewardConfig.model_validate(
-            dict(zip(_COEFFICIENTS, coefficients, strict=True))
+            dict(zip(_COEFFICIENTS, coefficients, strict=True)) | _MARGIN_OFF
         )
         assert config.to_native_dict("win_loss") == case
         rs.KaggricultureEnv(1, 0, 1, "{}", case, 1, hire_limit=241)
     else:
         with pytest.raises(ValidationError):
             KaggricultureRewardConfig.model_validate(
-                dict(zip(_COEFFICIENTS, coefficients, strict=True))
+                dict(zip(_COEFFICIENTS, coefficients, strict=True)) | _MARGIN_OFF
             )
         with pytest.raises(ValueError, match=r"econ|shaping|weight|cap"):
             rs.KaggricultureEnv(1, 0, 1, "{}", case, 1, hire_limit=241)
@@ -431,6 +452,11 @@ def test_native_fixture_rewards_match_independent_oracle() -> None:
         _BANK_ON
         | {"econ_bank_weight": 1e308, "econ_bank_scale": 1e-300, "econ_bank_cap": 0.2},
         {"econ_shaping": 1e-300, "econ_ineffective_weight": 0},
+        _MARGIN_PRESET,
+        _MARGIN_PRESET
+        | {"econ_shaping": 0.2, "econ_margin_scale": 500.0, "econ_margin_cap": 0.4},
+        _MARGIN_PRESET | _BANK_PRESET | {"econ_margin_cap": 0.25},
+        _MARGIN_PRESET | {"econ_margin_weight": 1e308, "econ_margin_scale": 1e-300},
     ],
     ids=[
         "overflow-saturation",
@@ -440,6 +466,10 @@ def test_native_fixture_rewards_match_independent_oracle() -> None:
         "bank-cap-binds-near-the-start-bank",
         "bank-overflow-saturates",
         "tiny-W-negative-zero",
+        "margin-preset",
+        "margin-clamp-binds-with-death-shaping",
+        "margin-with-bank",
+        "margin-overflow-saturates",
     ],
 )
 def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> None:
@@ -787,3 +817,142 @@ def test_autoreset_never_spans_two_games_in_the_native_bank_term() -> None:
             first_terminal = step
     assert first_terminal is not None
     assert first_terminal + 1 < 6
+
+
+# --- Owner term M: cash-difference (margin) potential (2026-09-30) ----------
+
+
+def test_margin_admission_budget_and_terminal_scale() -> None:
+    config = _config(**_MARGIN_PRESET)
+    assert config.terminal_scale == 0.5
+    assert config.to_native_dict("win_loss")["econ_margin_weight"] == 0.5
+    for name in _MARGIN_OFF:
+        for bad in (-0.01, float("nan"), float("inf"), True, "1"):
+            with pytest.raises(ValidationError, match=name):
+                _config(**(_MARGIN_PRESET | {name: bad}))  # type: ignore[arg-type]
+    with pytest.raises(ValidationError, match="econ_margin_scale"):
+        _config(**(_MARGIN_PRESET | {"econ_margin_scale": 0.0}))
+    with pytest.raises(ValidationError, match="econ_margin_cap"):
+        _config(**(_MARGIN_PRESET | {"econ_margin_cap": 0.0}))
+    with pytest.raises(ValidationError, match="sum below one"):
+        _config(**(_MARGIN_PRESET | {"econ_margin_cap": 1.0}))
+    with pytest.raises(ValidationError, match="sum below one"):
+        _config(**(_MARGIN_PRESET | {"econ_shaping": 0.2, "econ_margin_cap": 0.75}))
+    both = _config(**(_MARGIN_PRESET | {"econ_shaping": 0.2}))
+    assert both.terminal_scale == 1 - 0.25 - 0.5
+    # Disabled: inactive scale/cap are unconstrained and inert.
+    off = _config(econ_margin_scale=0.0, econ_margin_cap=5.0)
+    assert off.terminal_scale == _config().terminal_scale
+    for case, accepted in (
+        (_MARGIN_PRESET, True),
+        (_MARGIN_PRESET | {"econ_margin_scale": 0.0}, False),
+        (_MARGIN_PRESET | {"econ_margin_cap": 0.0}, False),
+        (_MARGIN_PRESET | {"econ_shaping": 0.2, "econ_margin_cap": 0.75}, False),
+        ({"econ_margin_scale": 0.0, "econ_margin_cap": 5.0}, True),
+    ):
+        native = (_RECIPE | case) | {"reward_mode": "win_loss"}
+        if accepted:
+            rs.KaggricultureEnv(1, 0, 1, "{}", native, 1, hire_limit=241)  # type: ignore[arg-type]
+        else:
+            with pytest.raises(ValueError, match=r"econ_margin|economic caps"):
+                rs.KaggricultureEnv(1, 0, 1, "{}", native, 1, hire_limit=241)  # type: ignore[arg-type]
+
+
+def test_margin_score_is_linear_then_clamps_at_both_signs() -> None:
+    config = _config(**_MARGIN_PRESET)
+    margins = torch.tensor(
+        [0.0, 10_000.0, -10_000.0, 50_000.0, -50_000.0, 1e300, -1e300],
+        dtype=torch.float64,
+    )
+    assert margin_score(margins, config).tolist() == [
+        0.0, 0.1, -0.1, 0.5, -0.5, 0.5, -0.5,
+    ]  # fmt: skip
+    huge = _config(
+        **(_MARGIN_PRESET | {"econ_margin_weight": 1e308, "econ_margin_scale": 1e-300})
+    )
+    extremes = torch.tensor([1e308, -1e308], dtype=torch.float64)
+    assert margin_score(extremes, huge).tolist() == [0.5, -0.5]
+    assert not margin_score(margins, _config()).any()
+
+
+def test_margin_score_takes_the_product_then_the_quotient_then_the_clamp() -> None:
+    # The parity contract's binary64 order (native `margin_score`). At weight .1
+    # and scale 50,000 the two associations differ in the last bit on every
+    # margin below, so a quotient-first oracle fails (review r1 mutation M6).
+    config = _config(**(_MARGIN_PRESET | {"econ_margin_weight": 0.1}))
+    margins = [3_003.0, 12_345.0, 20_000.0, 40_000.0]
+    product_first = [(0.1 * margin) / 50_000.0 for margin in margins]
+    quotient_first = [0.1 * (margin / 50_000.0) for margin in margins]
+    assert all(p != q for p, q in zip(product_first, quotient_first, strict=True))
+    signed = torch.tensor(margins, dtype=torch.float64)
+    assert margin_score(signed, config).tolist() == product_first
+    assert margin_score(-signed, config).tolist() == [-p for p in product_first]
+
+
+def test_margin_rewards_are_zero_sum_and_telescope_to_the_final_margin() -> None:
+    config = _config(**_MARGIN_PRESET)
+    time = torch.arange(720, dtype=torch.float64)
+    # Equal reset banks; seat 0 spends, then out-earns seat 1 past the clamp.
+    banks = torch.stack(
+        (
+            3_000 - 20 * time.clamp(max=100) + 150 * (time - 100).clamp(min=0),
+            3_000 + 40 * time - 200 * torch.sin(time * 0.37),
+        ),
+        dim=-1,
+    )
+    lead = banks[1:, 0] > banks[1:, 1]
+    assert lead.any(), "seat 0 must lead at some point"
+    assert (~lead).any(), "seat 1 must lead or tie at some point"
+    counts = torch.zeros((720, 2, 32), dtype=torch.int64)
+    dones = torch.zeros((719, 2), dtype=torch.bool)
+    dones[-1] = True
+    actual = transition_rewards(
+        counts[:-1], counts[1:], banks[:-1], banks[1:], dones, config
+    )
+    assert torch.equal(actual[:, 0], -actual[:, 1])
+    increments = margin_rewards(banks[:-1], banks[1:], config)
+    endpoint = margin_score(banks[-1] - banks[-1].flip(-1), config) + terminal_rewards(
+        banks[-1], config
+    )
+    assert endpoint.tolist() == [1.0, -1.0]
+    half_ulp = (
+        torch.nextafter(increments.float(), torch.tensor(float("inf"))).double()
+        - increments.float().double()
+    ).abs()
+    budget = half_ulp.sum(0) + (actual[-1].double().abs() * 2**-24)
+    budget += 719 * torch.finfo(torch.float64).eps * increments.abs().sum(0)
+    assert torch.all((actual.double().sum(0) - endpoint).abs() <= budget)
+
+
+def test_disabled_margin_term_is_bit_identical_to_the_previous_reward() -> None:
+    before = torch.zeros((6, 2, 32), dtype=torch.int64)
+    after = before.clone()
+    after[:, 0, :3] = torch.tensor([3, 1, 50])
+    after[:, 1, 1] = 1
+    banks_after = torch.tensor(
+        [[10, 5], [5, 10], [7, 7], [-3, 1e300], [2, 1], [1, 2]], dtype=torch.float64
+    )
+    dones = torch.tensor([[True] * 2] * 3 + [[False] * 2] * 3)
+    for bank in ({}, _BANK_ON):
+        for scale, cap in ((50_000.0, 0.0), (0.0, 0.0), (1.0, 0.9)):
+            config = _config(
+                econ_shaping=0.0003,
+                econ_ineffective_weight=0.000165,
+                econ_margin_scale=scale,
+                econ_margin_cap=cap,
+                **bank,
+            )
+            for banks_before in (banks_after, torch.zeros_like(banks_after)):
+                economic = economic_rewards(before, after, config)
+                if bank:
+                    economic = economic + bank_rewards(
+                        banks_before, banks_after, config
+                    )
+                legacy = (
+                    economic.float().double()
+                    + terminal_rewards(banks_after, config) * dones
+                ).float()
+                actual = transition_rewards(
+                    before, after, banks_before, banks_after, dones, config
+                )
+                assert torch.equal(actual.view(torch.int32), legacy.view(torch.int32))
