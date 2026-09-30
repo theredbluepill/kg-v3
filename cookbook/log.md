@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-09-30 — Commit the critic-offset review r1 (APPROVE) and its test and docs follow-ups
+
+An independent review of `kg/rebuild-critic-offset` `732438c` (`ops/critic-offset/review-r1.md`, VERDICT: APPROVE, no P1) is committed with author follow-ups. Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. Only a test, docs, one docstring and receipts changed:
+- **P2-1.** The value-sum test now asserts `compute_value` (the horizon and truncation bootstrap) and `evaluate_actions` equal the winner value plus the offset at a nonzero head. The review's surviving mutation R1 now fails it (`ops/critic-offset/r1-followup-mutation.log`).
+- **P2-2 and P3-4.** Stated as limits in `docs/rl-api-specs.md` and the Decision: the head's gradient still shares the global clip when detached, and the head shifts the RNG stream.
+- **P3-1, P3-2 and P3-3.** The resume wording, the attached-trunk provenance and "cast to FP32" are corrected.
+
+Revised the [[decisions/add-a-per-seat-critic-offset-for-the-own-bank-reward|critic offset Decision]] (a review bullet, three gap statements) and its index entry. The follow-ups were not independently re-reviewed. Nothing was trained.
+
 ## 2026-09-30 — Add the per-seat critic offset (model.critic_offset) and the bank-critic preset
 
 Owner, verbatim as relayed by the orchestrating agent: "let's switch back to self play no matter what, and think about how do we get the agent to earn moneny for real?", then "per-player critic might be the way out?", and "OK go ahead." for the agent-proposed reward numbers. On `kg/rebuild-critic-offset`, cut from `kg/isaiah-gap-closure` `3e89425`:

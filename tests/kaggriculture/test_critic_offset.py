@@ -146,6 +146,14 @@ def test_value_is_the_winner_value_plus_the_offset_and_actions_ignore_it() -> No
     assert offsets is not None
     assert offsets.abs().min() > 0
     torch.testing.assert_close(b.values, a.values + offsets, rtol=0, atol=0)
+    # The bootstrap (`compute_value`, the horizon `last_values` and truncation)
+    # and the update's replay (`evaluate_actions`) see the same sum, at a
+    # nonzero head.
+    with torch.no_grad():
+        bootstrap = on.compute_value(obs)
+        replay = on.evaluate_actions(obs, b.actions).values
+    torch.testing.assert_close(bootstrap, a.values + offsets, rtol=0, atol=0)
+    torch.testing.assert_close(replay, a.values + offsets, rtol=0, atol=0)
     # The policy never reads the head: identical programs and densities.
     assert torch.equal(a.actions.tokens, b.actions.tokens)
     assert torch.equal(a.log_probs.event, b.log_probs.event)

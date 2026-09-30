@@ -1,0 +1,9 @@
+# Review r1 P2-1 follow-up: mutation R1 re-run against the strengthened test
+# Tree: kg/rebuild-critic-offset 732438c + working-tree follow-ups, Apple Silicon CPU, OMP_NUM_THREADS=2, 2026-09-30
+# Mutation R1: compute_value returns the winner value only, without the offset:
+#   values, _, offsets = self._value_parts(self.encode_observations(obs), obs)
+#   return values if offsets is None else values - offsets
+# Command: .venv/bin/python -m pytest -q tests/kaggriculture/test_critic_offset.py
+FAILED tests/kaggriculture/test_critic_offset.py::test_value_is_the_winner_value_plus_the_offset_and_actions_ignore_it
+1 failed, 20 passed in 6.48s   -> KILLED (was SURVIVED in review-r1.md)
+# Reverted (file restored from a byte copy); unmutated: 21 passed in 6.63s

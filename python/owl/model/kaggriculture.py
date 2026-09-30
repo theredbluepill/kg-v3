@@ -1184,6 +1184,8 @@ class KaggricultureTransformer(
     def _critic_offsets(self, encoded: KaggricultureEncoded) -> torch.Tensor | None:
         """Per-row offset from the row's own critic-value token, FP32 ``[rows]``.
 
+        The head's Linear layers run in the autocast dtype; the output is cast.
+
         Only token 0 (self) is read: no opponent token and no other row. A
         non-live row gets exactly 0, so its value stays the winner critic's.
         With ``critic_offset_detach_trunk`` the token is detached, so the value

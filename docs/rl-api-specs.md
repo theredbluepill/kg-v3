@@ -1257,7 +1257,15 @@ env, trainer and model outputs are byte-identical to 3e89425
   the teacher's (zero-sum) winner distribution, and the offset takes the rest.
 - **`critic_offset_detach_trunk: true`** (requires `critic_offset`): the head
   reads the critic token detached, so the offset's value gradient reaches the
-  head only; the trunk still gets the winner part's gradient.
+  head only; the trunk still gets the winner part's gradient. The head's
+  gradient still enters the global `max_grad_norm` clip, so when clipping binds
+  it shrinks the shared (trunk, actor, winner) update; a detached arm is
+  therefore not free of the clip-share part of gradient interference (measured
+  on a tiny model at clip 1e-3: shared Σ|Δ| −21%).
+- **RNG stream.** Building and initialising the head draws from the global
+  RNG, so a head run and a flag-off run at the same seed do not share sampled
+  trajectories. The step-0 identity is of deterministic outputs on fixed
+  weights.
 - **Telemetry** (only with the head): the rollout also stores each value's
   offset. `train/value_offset_mean` and `train/value_offset_abs_mean` are masked
   over the value mask. `train/ev_common` is the explained variance of the
@@ -1267,14 +1275,16 @@ env, trainer and model outputs are byte-identical to 3e89425
   learner rows scatter their offsets like their values, with zero on scripted
   rows.
 - **Checkpoint loading.** `load_model_state_dict_allowing_lora` (every
-  `--load-model-weights` mode, `rl.teacher_init`, last-best and resume) accepts a
+  `--load-model-weights` mode, `rl.teacher_init`, last-best and the resume's
+  last-best) accepts a
   checkpoint that omits exactly all `critic_offset_head.*` keys. It then zeroes
   the head's output layer; the hidden layer keeps its fresh initialization. Any
   other missing key, a partial head, or an unexpected key still fails. A head
   checkpoint loaded into a model without the head fails on its unexpected
   `critic_offset_head.*` keys. `model_and_optimizer` from a headless checkpoint
   fails, because the head adds optimizer parameters, so warm starts use
-  `model_only`.
+  `model_only`. The resume model itself loads strictly, so a headless resume
+  into a head config fails.
 - **Kaggle agent.** The policy never reads the head (actions and
   log-probabilities are unchanged by its weights). The packaging must build the
   model from the checkpoint's own `config.yaml`, which records
