@@ -18,6 +18,9 @@ pub use observe::{
 mod tests;
 
 #[cfg(test)]
+mod seat_tests;
+
+#[cfg(test)]
 mod grammar_kernel_tests;
 
 #[cfg(test)]
@@ -73,16 +76,17 @@ struct ArrayRange {
 fn array_range<T: Element, const FIELD: usize>(
     array: &PyReadwriteArrayDyn<'_, T>,
     n_envs: usize,
+    seats: usize,
     length: usize,
 ) -> Result<ArrayRange, ObserveError> {
     let field = FIELD_SHAPES[FIELD];
     let shape = array.shape();
     if shape.len() != field.row_shape.len() + 2
         || shape[0] != n_envs
-        || shape[1] != 2
+        || shape[1] != seats
         || shape[2..] != *field.row_shape
     {
-        let expected: Vec<usize> = [n_envs, 2]
+        let expected: Vec<usize> = [n_envs, seats]
             .into_iter()
             .chain(field.row_shape.iter().copied())
             .collect();
@@ -249,35 +253,36 @@ pub fn encode_kaggriculture_headers_into(
     let n_envs = headers.len();
     let lengths = checked_lengths(n_envs).map_err(python_error)?;
     let ranges = [
-        array_range::<i64, 0>(&tile_kind, n_envs, lengths[0]).map_err(python_error)?,
-        array_range::<i64, 1>(&tile_crop, n_envs, lengths[1]).map_err(python_error)?,
-        array_range::<i64, 2>(&tile_animal, n_envs, lengths[2]).map_err(python_error)?,
-        array_range::<i64, 3>(&tile_cell, n_envs, lengths[3]).map_err(python_error)?,
-        array_range::<i64, 4>(&tile_role, n_envs, lengths[4]).map_err(python_error)?,
-        array_range::<i64, 5>(&tiles_int, n_envs, lengths[5]).map_err(python_error)?,
-        array_range::<f32, 6>(&tiles_float, n_envs, lengths[6]).map_err(python_error)?,
-        array_range::<i64, 7>(&actor_slot, n_envs, lengths[7]).map_err(python_error)?,
-        array_range::<i64, 8>(&actor_cell, n_envs, lengths[8]).map_err(python_error)?,
-        array_range::<i64, 9>(&actor_role, n_envs, lengths[9]).map_err(python_error)?,
-        array_range::<bool, 10>(&actor_mask, n_envs, lengths[10]).map_err(python_error)?,
-        array_range::<i64, 11>(&actor_inventory, n_envs, lengths[11]).map_err(python_error)?,
-        array_range::<i64, 12>(&actor_inventory_rank, n_envs, lengths[12]).map_err(python_error)?,
-        array_range::<f32, 13>(&actors_float, n_envs, lengths[13]).map_err(python_error)?,
-        array_range::<f32, 14>(&player_features, n_envs, lengths[14]).map_err(python_error)?,
-        array_range::<i64, 15>(&storage_counts, n_envs, lengths[15]).map_err(python_error)?,
-        array_range::<i64, 16>(&storage_rank, n_envs, lengths[16]).map_err(python_error)?,
-        array_range::<f64, 17>(&banks, n_envs, lengths[17]).map_err(python_error)?,
-        array_range::<i64, 18>(&shop_type, n_envs, lengths[18]).map_err(python_error)?,
-        array_range::<i64, 19>(&shop_slot, n_envs, lengths[19]).map_err(python_error)?,
-        array_range::<bool, 20>(&shop_mask, n_envs, lengths[20]).map_err(python_error)?,
-        array_range::<i64, 21>(&market_product, n_envs, lengths[21]).map_err(python_error)?,
-        array_range::<f32, 22>(&market_float, n_envs, lengths[22]).map_err(python_error)?,
-        array_range::<i64, 23>(&market_int, n_envs, lengths[23]).map_err(python_error)?,
-        array_range::<f32, 24>(&global_features, n_envs, lengths[24]).map_err(python_error)?,
-        array_range::<i64, 25>(&globals_int, n_envs, lengths[25]).map_err(python_error)?,
-        array_range::<bool, 26>(&still_playing, n_envs, lengths[26]).map_err(python_error)?,
-        array_range::<i64, 27>(&order_limits, n_envs, lengths[27]).map_err(python_error)?,
-        array_range::<bool, 28>(&can_act, n_envs, lengths[28]).map_err(python_error)?,
+        array_range::<i64, 0>(&tile_kind, n_envs, 2, lengths[0]).map_err(python_error)?,
+        array_range::<i64, 1>(&tile_crop, n_envs, 2, lengths[1]).map_err(python_error)?,
+        array_range::<i64, 2>(&tile_animal, n_envs, 2, lengths[2]).map_err(python_error)?,
+        array_range::<i64, 3>(&tile_cell, n_envs, 2, lengths[3]).map_err(python_error)?,
+        array_range::<i64, 4>(&tile_role, n_envs, 2, lengths[4]).map_err(python_error)?,
+        array_range::<i64, 5>(&tiles_int, n_envs, 2, lengths[5]).map_err(python_error)?,
+        array_range::<f32, 6>(&tiles_float, n_envs, 2, lengths[6]).map_err(python_error)?,
+        array_range::<i64, 7>(&actor_slot, n_envs, 2, lengths[7]).map_err(python_error)?,
+        array_range::<i64, 8>(&actor_cell, n_envs, 2, lengths[8]).map_err(python_error)?,
+        array_range::<i64, 9>(&actor_role, n_envs, 2, lengths[9]).map_err(python_error)?,
+        array_range::<bool, 10>(&actor_mask, n_envs, 2, lengths[10]).map_err(python_error)?,
+        array_range::<i64, 11>(&actor_inventory, n_envs, 2, lengths[11]).map_err(python_error)?,
+        array_range::<i64, 12>(&actor_inventory_rank, n_envs, 2, lengths[12])
+            .map_err(python_error)?,
+        array_range::<f32, 13>(&actors_float, n_envs, 2, lengths[13]).map_err(python_error)?,
+        array_range::<f32, 14>(&player_features, n_envs, 2, lengths[14]).map_err(python_error)?,
+        array_range::<i64, 15>(&storage_counts, n_envs, 2, lengths[15]).map_err(python_error)?,
+        array_range::<i64, 16>(&storage_rank, n_envs, 2, lengths[16]).map_err(python_error)?,
+        array_range::<f64, 17>(&banks, n_envs, 2, lengths[17]).map_err(python_error)?,
+        array_range::<i64, 18>(&shop_type, n_envs, 2, lengths[18]).map_err(python_error)?,
+        array_range::<i64, 19>(&shop_slot, n_envs, 2, lengths[19]).map_err(python_error)?,
+        array_range::<bool, 20>(&shop_mask, n_envs, 2, lengths[20]).map_err(python_error)?,
+        array_range::<i64, 21>(&market_product, n_envs, 2, lengths[21]).map_err(python_error)?,
+        array_range::<f32, 22>(&market_float, n_envs, 2, lengths[22]).map_err(python_error)?,
+        array_range::<i64, 23>(&market_int, n_envs, 2, lengths[23]).map_err(python_error)?,
+        array_range::<f32, 24>(&global_features, n_envs, 2, lengths[24]).map_err(python_error)?,
+        array_range::<i64, 25>(&globals_int, n_envs, 2, lengths[25]).map_err(python_error)?,
+        array_range::<bool, 26>(&still_playing, n_envs, 2, lengths[26]).map_err(python_error)?,
+        array_range::<i64, 27>(&order_limits, n_envs, 2, lengths[27]).map_err(python_error)?,
+        array_range::<bool, 28>(&can_act, n_envs, 2, lengths[28]).map_err(python_error)?,
     ];
     check_disjoint(&ranges).map_err(python_error)?;
     let mut output = ObsBuffersMut {
@@ -352,10 +357,163 @@ pub fn encode_kaggriculture_headers_into(
     .map_err(python_error)
 }
 
+/// One live seat's view, encoded through the same `write_seat` as training.
+///
+/// `view` is a JSON object with exactly `configuration`, `public` and
+/// `private` (the seat's own private state; see
+/// `PreparedObservation::from_seat_view`). Every buffer has leading shape
+/// `[1, 1]`. Admission (JSON, configuration envelope, snapshot and buffers)
+/// completes before the first write, so a rejected call leaves every buffer
+/// unchanged.
+#[allow(clippy::too_many_arguments)]
+#[pyfunction]
+#[pyo3(signature = (view, seat, *,
+    tile_kind, tile_crop, tile_animal, tile_cell, tile_role,
+    tiles_int, tiles_float, actor_slot, actor_cell, actor_role,
+    actor_mask, actor_inventory, actor_inventory_rank, actors_float, player_features,
+    storage_counts, storage_rank, banks, shop_type, shop_slot,
+    shop_mask, market_product, market_float, market_int, global_features,
+    globals_int, still_playing, order_limits, can_act,
+))]
+pub fn encode_kaggriculture_seat_into(
+    py: Python<'_>,
+    view: &str,
+    seat: i64,
+    #[pyo3(from_py_with = extract_array::<i64, 0>)] mut tile_kind: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 1>)] mut tile_crop: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 2>)] mut tile_animal: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 3>)] mut tile_cell: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 4>)] mut tile_role: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 5>)] mut tiles_int: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<f32, 6>)] mut tiles_float: PyReadwriteArrayDyn<'_, f32>,
+    #[pyo3(from_py_with = extract_array::<i64, 7>)] mut actor_slot: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 8>)] mut actor_cell: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 9>)] mut actor_role: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<bool, 10>)] mut actor_mask: PyReadwriteArrayDyn<'_, bool>,
+    #[pyo3(from_py_with = extract_array::<i64, 11>)] mut actor_inventory: PyReadwriteArrayDyn<
+        '_,
+        i64,
+    >,
+    #[pyo3(from_py_with = extract_array::<i64, 12>)] mut actor_inventory_rank: PyReadwriteArrayDyn<
+        '_,
+        i64,
+    >,
+    #[pyo3(from_py_with = extract_array::<f32, 13>)] mut actors_float: PyReadwriteArrayDyn<'_, f32>,
+    #[pyo3(from_py_with = extract_array::<f32, 14>)] mut player_features: PyReadwriteArrayDyn<
+        '_,
+        f32,
+    >,
+    #[pyo3(from_py_with = extract_array::<i64, 15>)] mut storage_counts: PyReadwriteArrayDyn<
+        '_,
+        i64,
+    >,
+    #[pyo3(from_py_with = extract_array::<i64, 16>)] mut storage_rank: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<f64, 17>)] mut banks: PyReadwriteArrayDyn<'_, f64>,
+    #[pyo3(from_py_with = extract_array::<i64, 18>)] mut shop_type: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<i64, 19>)] mut shop_slot: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<bool, 20>)] mut shop_mask: PyReadwriteArrayDyn<'_, bool>,
+    #[pyo3(from_py_with = extract_array::<i64, 21>)] mut market_product: PyReadwriteArrayDyn<
+        '_,
+        i64,
+    >,
+    #[pyo3(from_py_with = extract_array::<f32, 22>)] mut market_float: PyReadwriteArrayDyn<'_, f32>,
+    #[pyo3(from_py_with = extract_array::<i64, 23>)] mut market_int: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<f32, 24>)] mut global_features: PyReadwriteArrayDyn<
+        '_,
+        f32,
+    >,
+    #[pyo3(from_py_with = extract_array::<i64, 25>)] mut globals_int: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<bool, 26>)] mut still_playing: PyReadwriteArrayDyn<
+        '_,
+        bool,
+    >,
+    #[pyo3(from_py_with = extract_array::<i64, 27>)] mut order_limits: PyReadwriteArrayDyn<'_, i64>,
+    #[pyo3(from_py_with = extract_array::<bool, 28>)] mut can_act: PyReadwriteArrayDyn<'_, bool>,
+) -> PyResult<()> {
+    let seat = Seat::from_index(seat).map_err(python_error)?;
+    // One two-seat environment holds exactly two single-seat rows.
+    let lengths = checked_lengths(1)
+        .map_err(python_error)?
+        .map(|length| length / 2);
+    let ranges = [
+        array_range::<i64, 0>(&tile_kind, 1, 1, lengths[0]).map_err(python_error)?,
+        array_range::<i64, 1>(&tile_crop, 1, 1, lengths[1]).map_err(python_error)?,
+        array_range::<i64, 2>(&tile_animal, 1, 1, lengths[2]).map_err(python_error)?,
+        array_range::<i64, 3>(&tile_cell, 1, 1, lengths[3]).map_err(python_error)?,
+        array_range::<i64, 4>(&tile_role, 1, 1, lengths[4]).map_err(python_error)?,
+        array_range::<i64, 5>(&tiles_int, 1, 1, lengths[5]).map_err(python_error)?,
+        array_range::<f32, 6>(&tiles_float, 1, 1, lengths[6]).map_err(python_error)?,
+        array_range::<i64, 7>(&actor_slot, 1, 1, lengths[7]).map_err(python_error)?,
+        array_range::<i64, 8>(&actor_cell, 1, 1, lengths[8]).map_err(python_error)?,
+        array_range::<i64, 9>(&actor_role, 1, 1, lengths[9]).map_err(python_error)?,
+        array_range::<bool, 10>(&actor_mask, 1, 1, lengths[10]).map_err(python_error)?,
+        array_range::<i64, 11>(&actor_inventory, 1, 1, lengths[11]).map_err(python_error)?,
+        array_range::<i64, 12>(&actor_inventory_rank, 1, 1, lengths[12]).map_err(python_error)?,
+        array_range::<f32, 13>(&actors_float, 1, 1, lengths[13]).map_err(python_error)?,
+        array_range::<f32, 14>(&player_features, 1, 1, lengths[14]).map_err(python_error)?,
+        array_range::<i64, 15>(&storage_counts, 1, 1, lengths[15]).map_err(python_error)?,
+        array_range::<i64, 16>(&storage_rank, 1, 1, lengths[16]).map_err(python_error)?,
+        array_range::<f64, 17>(&banks, 1, 1, lengths[17]).map_err(python_error)?,
+        array_range::<i64, 18>(&shop_type, 1, 1, lengths[18]).map_err(python_error)?,
+        array_range::<i64, 19>(&shop_slot, 1, 1, lengths[19]).map_err(python_error)?,
+        array_range::<bool, 20>(&shop_mask, 1, 1, lengths[20]).map_err(python_error)?,
+        array_range::<i64, 21>(&market_product, 1, 1, lengths[21]).map_err(python_error)?,
+        array_range::<f32, 22>(&market_float, 1, 1, lengths[22]).map_err(python_error)?,
+        array_range::<i64, 23>(&market_int, 1, 1, lengths[23]).map_err(python_error)?,
+        array_range::<f32, 24>(&global_features, 1, 1, lengths[24]).map_err(python_error)?,
+        array_range::<i64, 25>(&globals_int, 1, 1, lengths[25]).map_err(python_error)?,
+        array_range::<bool, 26>(&still_playing, 1, 1, lengths[26]).map_err(python_error)?,
+        array_range::<i64, 27>(&order_limits, 1, 1, lengths[27]).map_err(python_error)?,
+        array_range::<bool, 28>(&can_act, 1, 1, lengths[28]).map_err(python_error)?,
+    ];
+    check_disjoint(&ranges).map_err(python_error)?;
+    let output = ObsBuffersMut {
+        tile_kind: array_slice::<i64, 0>(&mut tile_kind).map_err(python_error)?,
+        tile_crop: array_slice::<i64, 1>(&mut tile_crop).map_err(python_error)?,
+        tile_animal: array_slice::<i64, 2>(&mut tile_animal).map_err(python_error)?,
+        tile_cell: array_slice::<i64, 3>(&mut tile_cell).map_err(python_error)?,
+        tile_role: array_slice::<i64, 4>(&mut tile_role).map_err(python_error)?,
+        tiles_int: array_slice::<i64, 5>(&mut tiles_int).map_err(python_error)?,
+        tiles_float: array_slice::<f32, 6>(&mut tiles_float).map_err(python_error)?,
+        actor_slot: array_slice::<i64, 7>(&mut actor_slot).map_err(python_error)?,
+        actor_cell: array_slice::<i64, 8>(&mut actor_cell).map_err(python_error)?,
+        actor_role: array_slice::<i64, 9>(&mut actor_role).map_err(python_error)?,
+        actor_mask: array_slice::<bool, 10>(&mut actor_mask).map_err(python_error)?,
+        actor_inventory: array_slice::<i64, 11>(&mut actor_inventory).map_err(python_error)?,
+        actor_inventory_rank: array_slice::<i64, 12>(&mut actor_inventory_rank)
+            .map_err(python_error)?,
+        actors_float: array_slice::<f32, 13>(&mut actors_float).map_err(python_error)?,
+        player_features: array_slice::<f32, 14>(&mut player_features).map_err(python_error)?,
+        storage_counts: array_slice::<i64, 15>(&mut storage_counts).map_err(python_error)?,
+        storage_rank: array_slice::<i64, 16>(&mut storage_rank).map_err(python_error)?,
+        banks: array_slice::<f64, 17>(&mut banks).map_err(python_error)?,
+        shop_type: array_slice::<i64, 18>(&mut shop_type).map_err(python_error)?,
+        shop_slot: array_slice::<i64, 19>(&mut shop_slot).map_err(python_error)?,
+        shop_mask: array_slice::<bool, 20>(&mut shop_mask).map_err(python_error)?,
+        market_product: array_slice::<i64, 21>(&mut market_product).map_err(python_error)?,
+        market_float: array_slice::<f32, 22>(&mut market_float).map_err(python_error)?,
+        market_int: array_slice::<i64, 23>(&mut market_int).map_err(python_error)?,
+        global_features: array_slice::<f32, 24>(&mut global_features).map_err(python_error)?,
+        globals_int: array_slice::<i64, 25>(&mut globals_int).map_err(python_error)?,
+        still_playing: array_slice::<bool, 26>(&mut still_playing).map_err(python_error)?,
+        order_limits: array_slice::<i64, 27>(&mut order_limits).map_err(python_error)?,
+        can_act: array_slice::<bool, 28>(&mut can_act).map_err(python_error)?,
+    };
+    let mut row = ObsRowMut::from_single_row(output).map_err(python_error)?;
+    py.detach(move || -> Result<(), ObserveError> {
+        let prepared = PreparedObservation::from_seat_view(view, seat)?;
+        // Admitted. Only the infallible write follows the first mutation.
+        write_seat(&prepared, seat, &mut row);
+        Ok(())
+    })
+    .map_err(python_error)
+}
+
 mod bindings;
 
 pub(super) fn add_to_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(encode_kaggriculture_headers_into, module)?)?;
+    module.add_function(wrap_pyfunction!(encode_kaggriculture_seat_into, module)?)?;
     module.add_class::<bindings::PyKaggricultureEnv>()?;
     module.add_function(wrap_pyfunction!(bindings::kaggriculture_encode, module)?)?;
     module.add_function(wrap_pyfunction!(bindings::kaggriculture_decode, module)?)?;
