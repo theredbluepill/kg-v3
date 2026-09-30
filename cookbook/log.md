@@ -1,5 +1,25 @@
 # Change log
 
+## 2026-10-01 — Add an optional final-turn liquidation rule and A/B it on c50
+
+Owner, verbatim: "the current kaggle submission didnt sell stuff at the last day?"
+
+- **The rule.** `4c99768a` adds `python/owl/kaggriculture/final_turn.py`, a stateless rule that is off by default.
+  - It acts only on observation step `episodeSteps - 2`.
+  - Product carriers on shed tiles DROP, and the market becomes one SELL per product for the full shed.
+  - BUY and HIRE orders are dropped, and the result is re-validated natively.
+  - It is wired through `KaggricultureAgent(final_turn_liquidation=...)` and the `KAGGRICULTURE_FINAL_TURN_LIQUIDATION` switch in `main.py`.
+- **Checks.** 11 unit tests. The non-slow suite passed 3,058, and ruff, mypy and docs-fresh were clean.
+- **A/B on c50.** 48 paired fixed-shop games against smaller_market_shock, cha22 and v56 (8 seeds × 2 seats).
+  - 0 errors or fallbacks.
+  - Only the step-718 action differed.
+  - The shed emptied: 20.2 units → 0.
+  - The margin changed by +874 ± 157 per game, with no game worse.
+  - W-L stayed 6-42.
+- **Not done.** Nothing was shipped or submitted, and shipping the rule on needs a default change.
+
+See [[final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|the final-turn liquidation Reference]].
+
 ## 2026-10-01 — Add the rule 2 late-investment filter to the packaged agent (off by default)
 
 Owner, verbatim: "if we do it right, it would be assistance, and absolutely no harm right?"; "OK go ahead to implement it." Branch `kg/rule2-late-invest` (from `kg/submit-08bc` `7184b729`) adds `python/owl/kaggriculture/late_invest.py` and a `block_late_investments` flag (default off) on `KaggricultureAgent`. `main.py` enables it only with `KAGGRICULTURE_AGENT_BLOCK_LATE_INVESTMENTS=1`. The filter replaces a purchase with `[]` only when no play could sell its product by the last processed step. Thresholds are cited from Kaggle `kaggriculture.py` and `engine_rs/src/lib.rs`. `tests/kaggriculture/test_late_invest.py` (49 cases) checks the constants against the Kaggle module and the exact default thresholds. Its scripted Kaggle plays sell every last allowed purchase, and at the agent seam the default is byte-identical and the filtered action passes native validation. Five threshold mutations were killed. Ruff, mypy, docs-fresh and 126 agent/ship tests passed (`ops/late-invest-2026-10-01/checks.log`). No episode-level money effect is measured, and nothing is packaged or submitted. See [[late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|the rule 2 Reference]].
