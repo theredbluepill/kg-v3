@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-09-30 — Add fixed-opponent PPO collection (env.opponent_mix) with a learner mask: Track A of the cha22 anchor setup
+
+Owner, verbatim: "OK, for fixed bot, we can use cha22 (check ~/kaggriculture-v2).", "can we acceleerate this setup?", "implement the new rewrad first before we revisit the cha22 anchor setup." and "is anchor thing ready?". On `kg/rebuild-opponent-mix`, cut from `kg/rebuild-reward-margin` `25412a7` so term M is available, `b2997df` and `011eb05` add the bot-agnostic mechanism. The new [[decisions/train-ppo-against-a-fixed-opponent-with-a-learner-mask|fixed-opponent Decision]] records it and labels its readings as interpretation.
+- **Native.** `env.opponent_mix = {bot, fraction}` hosts an `opponents_rs` `HostedSeat` inside the native step in the first fraction × n_envs envs. The learned seat is `(env + episode) mod 2`, and every reset restarts the bot. The bot seat must be submitted as the absent program.
+- **Trainer.** The rollout forward runs on learner rows only. `_apply_learner_mask` keeps the bot's seat out of every loss term, advantage normalization and denominator.
+- **Telemetry and evaluation.** `train/*_vs_bot` per update, plus a fixed-bot evaluation (`eval/*_vs_bot`, both seats) at each `checkpoint_freq`. Promotion stays vs last_best, and the bot's name is only a W&B label.
+- **Default.** None is byte-identical to `25412a7`: a golden native digest, the trainer digest receipt and an unchanged config dump.
+- **Kaggle build.** The controllers are the default Cargo feature `fixed-opponents`, which the Kaggle build drops (`--no-default-features`), because EcoBot and E776 carry no redistribution license.
+
+Full `just prepare` on `011eb05` exits 0: root Rust 298 passed with 5 ignored, Python 2,888 passed with 9 skipped, plus mypy, docs-lint and docs-fresh (`ops/opponent-mix-2026-09-30/prepare.log`). All 13 source mutations are killed (`mutations.log` beside it). The nine formerly skipped learned-seat tests now run, so the [[references/snapshot-view-isolates-byte-exact-evaluation-opponents|snapshot-view Reference]] and the [[references/kaggriculture-parity-summary-maps-tested-and-untested-layers|parity-summary Reference]] are revised. Also updated the decisions index. Cha22 is not in the registry until Track B's import lands (WIP `6653148`, unreviewed). Nothing was trained, and no pod was touched.
+
 ## 2026-09-30 — Apply the reward-margin review r1: the critic-range limit of term M and the operation-order pins
 
 An independent Claude review of `kg/rebuild-reward-margin` `8b45577` (`ops/reward-margin/review-r1.md`, REQUEST CHANGES with no P1; a Claude substitute for Codex under the owner's approval, not a Codex verdict) found the reward code correct and its fixes are applied on the same branch. No reward code or preset value changed, so the live relaunch from `87beaf0` is unaffected.
