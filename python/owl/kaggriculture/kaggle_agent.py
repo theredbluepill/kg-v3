@@ -7,6 +7,9 @@ grammar and validates the resulting action by a native encode round trip.
 
 Nothing carries between turns except the loaded weights, the reusable buffers
 (fully overwritten each call) and telemetry counters that never feed the model.
+With ``final_turn_liquidation`` (off by default) the validated action of the
+last resolved turn is rewritten by the stateless rule in ``final_turn`` and
+validated again.
 
 ``act`` is the Kaggle process boundary. An exception there loses the episode,
 so it returns the default PASS program and counts the failure, unless the agent
@@ -32,6 +35,7 @@ from owl.config import BaseConfig
 from owl.kaggriculture.codec import decode_action, encode_action_into
 from owl.kaggriculture.config import KaggricultureEnvConfig
 from owl.kaggriculture.env import allocate_single_seat_buffers
+from owl.kaggriculture.final_turn import liquidate_final_turn
 from owl.kaggriculture.kaggle_view import SeatArrays, encode_seat_into, seat_view_json
 from owl.kaggriculture.types import (
     ACTION_SLOTS,
@@ -201,6 +205,7 @@ class KaggricultureAgent:
         deterministic: bool,
         strict: bool,
         min_overage_time: float,
+        final_turn_liquidation: bool = False,
     ) -> None:
         start = perf_counter()
         self.config = load_checkpoint_config(model_root / "config.yaml")
@@ -209,6 +214,8 @@ class KaggricultureAgent:
         self.deterministic = deterministic
         self.strict = strict
         self.min_overage_time = min_overage_time
+        self.final_turn_liquidation = final_turn_liquidation
+        self.liquidations = 0
         self.obs: KaggricultureObsBatch = allocate_single_seat_buffers()
         self.arrays = SeatArrays.of(self.obs)
         self._scratch = np.empty((MAX_FRAMES, ACTION_SLOTS), dtype=np.int64)
@@ -216,7 +223,11 @@ class KaggricultureAgent:
         self.caught_errors = 0
         self.budget_passes = 0
         self._logged_dropped: set[str] = set()
-        print(f"kg load_s={perf_counter() - start:.2f}", flush=True)
+        print(
+            f"kg load_s={perf_counter() - start:.2f} "
+            f"final_turn_liquidation={int(final_turn_liquidation)}",
+            flush=True,
+        )
 
     def warm_up(self) -> None:
         """Run one unguarded turn on the bundled step-0 observation.
@@ -290,6 +301,25 @@ class KaggricultureAgent:
             hire_limit=self.hire_limit,
             scratch=self._scratch,
         )
+        if self.final_turn_liquidation:
+            liquidated = liquidate_final_turn(
+                observation, configuration, action, order_limit=order_limit
+            )
+            if liquidated is not action:
+                action = validate_action(
+                    liquidated,
+                    actors=actors,
+                    order_limit=order_limit,
+                    hire_limit=self.hire_limit,
+                    scratch=self._scratch,
+                )
+                self.liquidations += 1
+                print(
+                    f"kg step={observation['step']} final_turn_liquidation "
+                    f"farmer={action['farmer']} hands={action['hands']} "
+                    f"market={action['market']}",
+                    flush=True,
+                )
         done = perf_counter()
         print(
             f"kg step={observation['step']} seat={seat} "
