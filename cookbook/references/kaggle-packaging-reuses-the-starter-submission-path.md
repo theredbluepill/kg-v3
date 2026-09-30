@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggle packaging ships the BC agent as a native, validated tarball"
-description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Branch kg/submit-08bc merges the ship path onto main 07c8fc99 so PPO run configs with the bank/margin reward-shaping keys load; the manifest now records only the checkpoint file name; a strict 5-turn Mac load of PPO checkpoint 08bc19ae passed. scripts/package_checkpoint.sh now packages a checkpoint from the Mac in about 28 s: it reuses the cached 08bc Linux module only while native sources equal its source commit 9a743fad, verifies hashes and every model tensor, and runs a 40-turn strict Kaggle-image episode. The cached module has the fixed-opponent controllers compiled in (default cargo features), so the script refuses it without --allow-fixed-opponents."
+description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Branch kg/submit-08bc merges the ship path onto main 07c8fc99 so PPO run configs with the bank/margin reward-shaping keys load; the manifest now records only the checkpoint file name; a strict 5-turn Mac load of PPO checkpoint 08bc19ae passed. scripts/package_checkpoint.sh now packages a checkpoint from the Mac in about 28 s: it reuses the cached 08bc Linux module only while native sources equal its source commit 9a743fad, verifies hashes and every model tensor, and runs a 40-turn strict Kaggle-image episode. The 08bc module had the fixed-opponent controllers compiled in (default cargo features) and 08bc shipped it; the cache now holds a --no-default-features rebuild (3e5e4e55, 3.5 MB, no opponent strings, glibc max 2.35), with which the 50M checkpoint packaged and passed the 40-turn Kaggle-image episode without --allow-fixed-opponents."
 tags: ["kaggriculture-v3", "adaptation", "packaging", "kaggle-runtime"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
@@ -39,6 +39,7 @@ sources:
   - resource: "repository:scripts/package_checkpoint.sh"
   - resource: "repository:native-cache/manifest.json"
   - resource: "repository:README.md"
+  - resource: "repository:Cargo.toml"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/agent.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/core.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/envs/kaggriculture/kaggriculture.json"
@@ -247,10 +248,10 @@ Changed paths and reasons:
     `--network none --cpus=1.6 --memory=6.5g`): 40 turns by default, 720 with
     `--full-episode`.
   - It writes `OUT_DIR/PACKAGE.md` with per-stage wall times.
-- `native-cache/manifest.json`: custody of the cached module `2bbdd2f0…8e4`
-  (14,309,312 bytes). It records source commit `9a743fad`, glibc symbol max
-  2.35, the seed path `artifacts/08bc/rs.abi3.so` and the full pod build
-  receipt. The `.so` itself is gitignored (`/native-cache/*.so*`).
+- `native-cache/manifest.json`: custody of the cached module, its source
+  commit, glibc symbol max, seed path and full pod build receipt. The `.so`
+  itself is gitignored (`/native-cache/*.so*`). It first recorded the 08bc
+  module `2bbdd2f0…8e4`; it now records the Kaggle-feature rebuild below.
 - `README.md`: a section on usage, the rebuild rule and the opponent flag.
 
 **Finding: the 08bc module carries the fixed-opponent controllers.** The 08bc
@@ -286,9 +287,54 @@ Checks on commit `be79f135` (Mac, owner's Docker):
 
 Limits: the archive hash changes on every build, because the manifest records
 `built_utc`. The short episode covers 40 of 720 turns; `--full-episode` was not
-run on c50 here. The module was not rebuilt, and `--no-default-features` builds
-have no cached module yet. There is no shellcheck in this environment. Nothing
+run on c50 here. The module was not rebuilt in that check; the next section
+adds the `--no-default-features` module. There is no shellcheck in this environment. Nothing
 was uploaded or submitted.
+
+## Kaggle-feature native module (no fixed opponents)
+
+The 08bc module shipped the fixed-opponent controllers, so the module was
+rebuilt with the Kaggle feature set and made the packager's default. This fixes
+future packages only; the 08bc submission (ref 56711278) already carries the
+old module.
+
+- Build: pod `abl4mvr5w1mmn4`, `/root/sub08bc`, the same clean clone of
+  `9a743fad` (tree `aaf9d4d2`), CPU only, `nice -n 19`, `CARGO_BUILD_JOBS=8`,
+  fresh `CARGO_TARGET_DIR`; the live training run and `/root/kg-v3-anchor`
+  were not touched. The command was `maturin build --release --compatibility
+  linux --no-default-features`. Maturin still adds `extension-module` from
+  `pyproject.toml [tool.maturin]`, so the build is `Cargo.toml`'s documented
+  Kaggle feature set. Toolchain: rustc 1.97.0-nightly, maturin 1.15.0 and
+  CPython 3.11.13. The build took 38 s.
+- Module `3e5e4e55…664e`, 3,485,792 bytes (the BC module was 3.5 MB). Its
+  highest glibc symbol is 2.35 (`hypotf`), and it needs only libgcc_s, libm,
+  libc and ld-linux. `objdump -d` finds no zmm or AVX-512 mask instructions.
+- Opponent check: `strings -a` finds 0 matches for `kaggriculture_opponents`,
+  `opponents_rs`, `native_agents`, `e776`/`E776`, `EcoBot`, `cha22`/`Cha22`,
+  `farm2945`, `metav4` and `ig_agent`. The old module has 1,013, 46, 7 and 77
+  matches for `kaggriculture_opponents`, `e776`, `EcoBot` and `cha22`. Two
+  matches are false positives: one `v43` string is a mangled `Env43` method
+  name, and one `nm` "e776" is the address `0x1e7760`. On the pod,
+  `assert_release_build()` passed and `kaggriculture_opponent_bots() == ()`.
+- `native-cache/manifest.json` now names this module under `module`, with
+  `fixed_opponents_compiled_in: false` and seed
+  `artifacts/native-clean/rs.abi3.so`. It keeps the 08bc module and its
+  receipt under `superseded_modules`, with the status "contains opponents, do
+  not ship". The README section says the same.
+- Package check on commit `b43260fb` (Mac, owner's Docker, without
+  `--allow-fixed-opponents`): the 50M checkpoint `0cc80065…a7c2` went into
+  `artifacts/c50-clean/` (gitignored). The archive is 24,719,006 bytes, SHA-256
+  `7ba6dbb2231f828c7fd611b49c1a82691e02a1360ad1711e5b250b0fe23b95db`; the
+  inner manifest is `8729f242…7934`. All 65 files re-hashed clean, and 210 of
+  210 tensors are equal. The shipped `owl/rs.abi3.so` is `3e5e4e55…`. The strict
+  40-turn self-play episode (seed 7) qualified: 39 calls per seat, 0 bad
+  statuses, exceptions, invalid raw actions or default passes, and a steady
+  p99 of 0.25 s. The total was 27.6 s.
+
+Limits: the module was not built inside Kaggle's image, and it is not
+stripped. The ymm (AVX2) lines were not traced to crates. Only 40 of 720 turns
+ran. The old module's `.so` stays in the Mac cache for custody. Nothing was
+uploaded or submitted.
 
 ## Deviations from the approved brief
 
