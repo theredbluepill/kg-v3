@@ -192,7 +192,11 @@ Training presets live in `configs/`:
   `train/return_common_mean` and `train/return_zero_sum_abs_mean`; the zero-sum
   winner critic cannot represent the term's common mode. Run J used
   `env.native_threads=4` as a launch override, so a J/2 reproduction must pass
-  it again. No run has used these presets.
+  it again. No run has used these presets. The three bank fields are required,
+  so a pre-change `config.yaml` (for example a BC checkpoint's sibling config
+  used as `rl.teacher_init`) must add `econ_bank_weight: 0.0`,
+  `econ_bank_scale: 100000.0` and `econ_bank_cap: 0.0`, which reproduces its
+  rewards exactly.
 
 The training entrypoint configures PyTorch for TF32 matmul/conv precision and
 cuDNN benchmarking before constructing the environment, model, and optimizer.

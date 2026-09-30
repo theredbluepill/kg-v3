@@ -914,7 +914,12 @@ metadata is preserved. Framework seed metadata has no lifecycle effect.
 The nine reward coefficients have a single definition in
 `owl.kaggriculture.rewards.KaggricultureRewardConfig`; all are required, finite
 and nonnegative. The existing `reward_shaping` field holds them, while the
-single top-level `reward_mode` remains `win_loss`. A complete example is:
+single top-level `reward_mode` remains `win_loss`. A config written before the
+own-bank term (without the three `econ_bank_*` fields, such as a pre-change
+run's or BC checkpoint's sibling `config.yaml`) no longer validates, including
+as `rl.teacher_init` or for a full resume; adding `econ_bank_weight: 0.0`,
+`econ_bank_scale: 100000.0` and `econ_bank_cap: 0.0` migrates it and
+reproduces its rewards exactly. A complete example is:
 
 ```yaml
 env:
@@ -1440,10 +1445,14 @@ replays bit-exactly). The bank presets use weight .25, scale 100,000 and cap
 agent, not given by the owner (see the term A Decision).
 
 Disabled components short-circuit. Economic reward (relative penalties plus
-any bank term) is computed in float64 and rounded to float32 first; on terminal steps that float32 value is promoted to
-float64, the raw-bank sign times `terminal_scale` is added, then the result is
-rounded to float32 again. Counter monotonicity and representability, finite
-banks and final rewards are checked before publication. Full undiscounted
+any bank term) is computed in float64 and rounded to float32 first; on terminal
+steps that float32 value is promoted to float64, the raw-bank sign times
+`terminal_scale` is added, then the result is rounded to float32 again.
+Non-terminal steps publish the float32 economic value unchanged, including a
+`-0.0` from an underflowing negative sum; the Python oracle adds the terminal
+term only on terminal steps, so its bits, including the sign of zero, match
+native. Counter monotonicity and representability, finite banks and final
+rewards are checked before publication. Full undiscounted
 untruncated real-arithmetic returns telescope within [-1,1] because the active
 caps sum below one; this does not bound bootstrap-augmented partial returns.
 The zero-sum winner critic (`2p − 1` per seat, `p_0 + p_1 = 1`) always predicts

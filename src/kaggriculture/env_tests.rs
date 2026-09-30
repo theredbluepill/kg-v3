@@ -376,6 +376,29 @@ fn preset_bank_values_match_the_accepted_consequences() {
 }
 
 #[test]
+fn bank_score_takes_the_product_then_the_quotient_then_the_cap() {
+    // The parity contract's binary64 order. At a non-power-of-two weight the two
+    // associations differ in the last bit: (.1 * 70,000) / 100,000 is .07, but
+    // .1 * (70,000 / 100,000) is .06999999999999999.
+    let cfg = RewardConfig {
+        econ_bank_weight: 0.1,
+        ..preset_bank_config()
+    };
+    cfg.validate().unwrap();
+    assert_eq!(cfg.bank_score(70_000.).to_bits(), 0.07_f64.to_bits());
+    for bank in [3_003., 3_006., 12_345., 70_000.] {
+        let product_first = (0.1_f64 * bank) / 100_000.;
+        let quotient_first = 0.1_f64 * (bank / 100_000.);
+        assert_ne!(
+            product_first.to_bits(),
+            quotient_first.to_bits(),
+            "row must discriminate"
+        );
+        assert_eq!(cfg.bank_score(bank).to_bits(), product_first.to_bits());
+    }
+}
+
+#[test]
 fn relative_and_bank_parts_are_summed_in_f64_and_rounded_to_f32_once() {
     // Seat 0 records one drought death, so seat 1's relative term is +.2, and
     // seat 1's own bank grows. Rounding each part to f32 separately and adding

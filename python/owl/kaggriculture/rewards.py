@@ -209,7 +209,9 @@ def transition_rewards(
     The economic term is the relative penalty difference plus, only when
     ``econ_bank_weight > 0``, the own bank-score increment, summed in float64
     before the first f32 rounding. With the bank term off nothing is added, so
-    the result is bit-identical to the relative-only reward.
+    the result is bit-identical to the relative-only reward. The terminal term
+    is added only where ``dones`` is true, so the result matches native bits
+    including the sign of zero.
     """
     economic = economic_rewards(before, after, config)
     terminal = terminal_rewards(banks_after, config)
@@ -232,4 +234,8 @@ def transition_rewards(
         economic = economic + bank_rewards(banks_before, banks_after, config)
     else:
         _validate_banks(banks_before, "banks_before")
-    return (economic.float().double() + terminal * dones).float()
+    economic_f32 = economic.float()
+    # Add the terminal term only on terminal steps, as native does: adding a
+    # +0.0 elsewhere would turn a native -0.0 economic reward into +0.0.
+    terminal_f32 = (economic_f32.double() + terminal).float()
+    return torch.where(dones, terminal_f32, economic_f32)

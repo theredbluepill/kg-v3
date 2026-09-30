@@ -430,6 +430,7 @@ def test_native_fixture_rewards_match_independent_oracle() -> None:
         _BANK_ON | {"econ_bank_scale": 10_000.0, "econ_bank_cap": 0.29},
         _BANK_ON
         | {"econ_bank_weight": 1e308, "econ_bank_scale": 1e-300, "econ_bank_cap": 0.2},
+        {"econ_shaping": 1e-300, "econ_ineffective_weight": 0},
     ],
     ids=[
         "overflow-saturation",
@@ -438,6 +439,7 @@ def test_native_fixture_rewards_match_independent_oracle() -> None:
         "bank-presets",
         "bank-cap-binds-near-the-start-bank",
         "bank-overflow-saturates",
+        "tiny-W-negative-zero",
     ],
 )
 def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> None:
@@ -454,6 +456,7 @@ def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> Non
     )
     out = buffers(1)
     env.observe(**out)
+    negative_zeros = 0
     for step in range(96):
         public = json.loads(env.state_snapshot(0))["public"]
         tokens = np.zeros((1, 2, 252, 12), dtype=np.int64)
@@ -476,7 +479,15 @@ def test_extreme_value_native_rewards_match_independent_oracle(overrides) -> Non
             torch.from_numpy(out["dones"]),
             config,
         ).numpy()
-        np.testing.assert_array_equal(out["rewards"], expected, err_msg=f"step={step}")
+        # Bit equality, including the sign of zero.
+        np.testing.assert_array_equal(
+            out["rewards"].view(np.int32), expected.view(np.int32), err_msg=f"{step=}"
+        )
+        negative_zeros += int(
+            np.sum((out["rewards"] == 0) & np.signbit(out["rewards"]))
+        )
+    if config.econ_shaping == 1e-300:
+        assert negative_zeros > 0, "the tiny-W row must produce a native -0.0"
     assert out["dones"].all()
     assert out["transition_econ_after"][0, 0, 0] >= 1
     assert out["transition_econ_after"][0, 0, 1] >= 1
@@ -537,6 +548,36 @@ def test_preset_bank_score_matches_the_accepted_consequences() -> None:
     assert score[0, 1].item() == 0.0625
     assert score[1, 1].item() < 0.25
     assert score[2, 1].item() == 0.25
+
+
+def test_bank_score_takes_the_product_then_the_quotient_then_the_cap() -> None:
+    # The parity contract's binary64 order. At a non-power-of-two weight the two
+    # associations differ in the last bit: (.1 * 70,000) / 1e5 is .07, but
+    # .1 * (70,000 / 1e5) is .06999999999999999.
+    config = _config(**(_BANK_PRESET | {"econ_bank_weight": 0.1}))
+    banks = [3_003.0, 3_006.0, 12_345.0, 70_000.0]
+    product_first = [(0.1 * bank) / 100_000.0 for bank in banks]
+    quotient_first = [0.1 * (bank / 100_000.0) for bank in banks]
+    assert all(p != q for p, q in zip(product_first, quotient_first, strict=True))
+    score = bank_score(
+        torch.tensor([banks[:2], banks[2:]], dtype=torch.float64), config
+    )
+    assert score.flatten().tolist() == product_first
+    assert product_first[3] == 0.07
+
+
+def test_non_terminal_rewards_keep_the_native_sign_of_zero() -> None:
+    # A tiny W makes seat 0's own death increment underflow in f32: native
+    # returns -0.0 there. Only a terminal step adds the (possibly zero) terminal.
+    config = _config(econ_shaping=1e-300, econ_ineffective_weight=0)
+    before = torch.zeros((2, 2, 32), dtype=torch.int64)
+    after = before.clone()
+    after[:, 0, 0] = 1
+    banks = torch.tensor([[3_000.0, 3_000.0], [3_000.0, 3_000.0]], dtype=torch.float64)
+    dones = torch.tensor([[False, False], [True, True]])
+    actual = transition_rewards(before, after, banks, banks, dones, config)
+    assert actual.tolist() == [[0.0, 0.0], [0.0, 0.0]]
+    assert torch.signbit(actual).tolist() == [[True, False], [False, False]]
 
 
 @pytest.mark.parametrize(
