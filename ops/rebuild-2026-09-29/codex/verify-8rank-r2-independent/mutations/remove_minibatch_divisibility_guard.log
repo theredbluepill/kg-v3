@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks ___
+
+    def test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks() -> None:
+        scaling = _scaling_6m()
+        accum = scaling.model_copy(
+            update={"rl": scaling.rl.model_copy(update={"gradient_accumulation_steps": 3})}
+        )
+>       with pytest.raises(ValueError, match="segments_per_minibatch \\* gradient"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/kaggriculture/test_configs.py:175: Failed
+=========================== short test summary info ============================
+FAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks
+1 failed, 49 deselected in 0.04s

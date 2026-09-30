@@ -1,0 +1,409 @@
+[
+  {
+    "name": "wrong_spm_4",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "  segments_per_minibatch: 2\n",
+    "new": "  segments_per_minibatch: 4\n",
+    "expression": "(global_workload or per_rank_shapes or differ_only or eight_rank_workloads) and (8rank or differ_only or eight_rank_workloads)",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "(global_workload or per_rank_shapes or differ_only or eight_rank_workloads) and (8rank or differ_only or eight_rank_workloads)",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "181026ec6da3cc796978b7c6e6a8d49f23e1851da06301c9031591216f3205fb",
+    "summary": "FAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]\nFAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes\nFAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking\n4 failed, 46 deselected in 0.06s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "wrong_envs_64",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "  n_envs: 32\n",
+    "new": "  n_envs: 64\n",
+    "expression": "(global_workload or per_rank_shapes or differ_only or eight_rank_workloads or main_loads) and (8rank or differ_only or eight_rank_workloads)",
+    "files": [
+      "tests/kaggriculture/test_configs.py",
+      "tests/scripts/test_run_ppo.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "tests/scripts/test_run_ppo.py",
+      "-k",
+      "(global_workload or per_rank_shapes or differ_only or eight_rank_workloads or main_loads) and (8rank or differ_only or eight_rank_workloads)",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "28186b713d032c2e93bf7963b321963639a3eae673b6057ce1e6bf75cd7d202e",
+    "summary": "FAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes\nFAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking\nFAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]\n5 failed, 149 deselected in 0.18s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "teacher_constant_64",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "  teacher_segments_per_minibatch: 128\n",
+    "new": "  teacher_segments_per_minibatch: 64\n",
+    "expression": "per_rank_shapes and 8rank",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "per_rank_shapes and 8rank",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "465bfd1ac81a6043c2f862c79baa863975c50a33623c1c8f1eb150224218c1a5",
+    "summary": "tests/kaggriculture/test_configs.py:153: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_ranked_config_per_rank_shapes_are_scaling_6m_divided[kaggriculture_8rank.yaml-8]\n1 failed, 49 deselected in 0.04s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "remove_env_divisibility_guard",
+    "path": "tests/kaggriculture/test_configs.py",
+    "old": "        if value % world_size != 0:\n",
+    "new": "        if name != \"n_envs\" and value % world_size != 0:\n",
+    "expression": "fails_loudly_when_not_divisible and 3-n_envs",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "fails_loudly_when_not_divisible and 3-n_envs",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutated_sha256": "6a437288e8ef23dedf53ac26008f82118c87574c9b7764030fc72b8b0eb13d2c",
+    "summary": "tests/kaggriculture/test_configs.py:166: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[3-n_envs=256 is not divisible by world size 3]\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "remove_spm_divisibility_guard",
+    "path": "tests/kaggriculture/test_configs.py",
+    "old": "        if value % world_size != 0:\n",
+    "new": "        if name != \"segments_per_minibatch\" and value % world_size != 0:\n",
+    "expression": "fails_loudly_when_not_divisible and 32-segments",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "fails_loudly_when_not_divisible and 32-segments",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutated_sha256": "eaa0dbedd3278a192b9da088e20a872abe93f848b47cf0dff9691a27b066dbf9",
+    "summary": "tests/kaggriculture/test_configs.py:102: ZeroDivisionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_fails_loudly_when_not_divisible[32-segments_per_minibatch=16 is not divisible by world size 32]\n1 failed, 49 deselected in 0.04s",
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "remove_minibatch_divisibility_guard",
+    "path": "tests/kaggriculture/test_configs.py",
+    "old": "    if n_envs % per_step != 0:\n",
+    "new": "    if False and n_envs % per_step != 0:\n",
+    "expression": "rejects_partial_minibatches_and_teacher_chunks",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "rejects_partial_minibatches_and_teacher_chunks",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutated_sha256": "825ba51895d7a7c064d9945283d2a0552dbf32796e3ab98645a4a34d8f0cd12b",
+    "summary": "tests/kaggriculture/test_configs.py:175: Failed\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks\n1 failed, 49 deselected in 0.04s",
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "remove_teacher_divisibility_guard",
+    "path": "tests/kaggriculture/test_configs.py",
+    "old": "    if n_envs % teacher_chunk != 0:\n",
+    "new": "    if False and n_envs % teacher_chunk != 0:\n",
+    "expression": "rejects_partial_minibatches_and_teacher_chunks",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "rejects_partial_minibatches_and_teacher_chunks",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "mutated_sha256": "cf964f00e06786eaafec14235b1472ec7abcd378a01d257292354e0099aa061d",
+    "summary": "tests/kaggriculture/test_configs.py:182: Failed\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_isaiah_per_rank_shape_rejects_partial_minibatches_and_teacher_chunks\n1 failed, 49 deselected in 0.04s",
+    "restored_sha256": "87f75f9bc715b1aa09e3b01e674f30fdc9661dd640d9b46a5135c4600e1d8f2c",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "wrong_optimizer_lr",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "  muon_lr: 0.002\n",
+    "new": "  muon_lr: 0.003\n",
+    "expression": "differ_only_in_per_rank_shapes",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "282b9d1ffe4ce90fac6ec0463f6769d6299f754e237af0dc53de5a380a7a24f0",
+    "summary": "tests/kaggriculture/test_configs.py:215: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "wrong_env_threads",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "  native_threads: 2\n",
+    "new": "  native_threads: 3\n",
+    "expression": "differ_only_in_per_rank_shapes",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "d3aee543b47ae44d3fdde404d63da1f16326dd3c378d0981dbb7556ceaf5c242",
+    "summary": "tests/kaggriculture/test_configs.py:211: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "wrong_model",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "model: kaggriculture\n",
+    "new": "model: kaggriculture_cpu\n",
+    "expression": "differ_only_in_per_rank_shapes",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "4cc0006c56a879d9d4202f32e270f2e9f4d04e5aa39ca4d72629b4e7dd31d254",
+    "summary": "tests/kaggriculture/test_configs.py:214: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "wrong_ppo_entropy",
+    "path": "configs/kaggriculture_8rank.yaml",
+    "old": "  ent_coef: 1e-6\n",
+    "new": "  ent_coef: 2e-6\n",
+    "expression": "differ_only_in_per_rank_shapes",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "differ_only_in_per_rank_shapes",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "mutated_sha256": "75a48bcc22f76cf26867ed47ffec81e5feb479f31a68badf88b7f9f9dcf18c86",
+    "summary": "tests/kaggriculture/test_configs.py:216: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_ranked_configs_differ_only_in_per_rank_shapes\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "f14524faf9b267e04d1480add398685132cdbe1399bd65bd4d7b9feb83288434",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "remove_startup_workload_call",
+    "path": "scripts/run_ppo.py",
+    "old": "        _check_model_workload(\n            cfg.model, n_envs=cfg.env.n_envs, rl=cfg.rl, distributed=distributed\n        )\n",
+    "new": "        # Independent verification mutation: startup call removed.\n",
+    "expression": "main_loads_kaggriculture and 8rank",
+    "files": [
+      "tests/scripts/test_run_ppo.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/scripts/test_run_ppo.py",
+      "-k",
+      "main_loads_kaggriculture and 8rank",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "0583aea54de1eab1dc97776ae83ec8f2adf9c0de4e7848ee1e4fe0c56606912f",
+    "mutated_sha256": "2db0a684b1a7d24525a06a3a0186ad2e404f931fc9b8874122a8af61264ffcc0",
+    "summary": "tests/scripts/test_run_ppo.py:3351: AssertionError\n=========================== short test summary info ============================\nFAILED tests/scripts/test_run_ppo.py::test_main_loads_kaggriculture_config_and_prints_headroom_before_allocation[kaggriculture_8rank.yaml-64-4096-1]\n1 failed, 103 deselected in 0.14s",
+    "restored_sha256": "0583aea54de1eab1dc97776ae83ec8f2adf9c0de4e7848ee1e4fe0c56606912f",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "independent_headroom_teacher_rows",
+    "path": "python/owl/model/kaggriculture_workload.py",
+    "old": "        teacher_segments = min(teacher_segments_per_minibatch, n_envs)\n",
+    "new": "        teacher_segments = max(teacher_segments_per_minibatch, n_envs)\n",
+    "expression": "eight_rank_workloads_fit_the_model_chunking",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutated_sha256": "d7be2d1e8ac3c59dcba7dd0a7b817546468c0760bd2ea4345f1ca7cd3c5ed101",
+    "summary": "tests/kaggriculture/test_configs.py:302: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking\n1 failed, 49 deselected in 0.04s",
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "independent_headroom_trunk_calls",
+    "path": "python/owl/model/kaggriculture_workload.py",
+    "old": "        return math.ceil(self.rows / self.trunk_rows_per_call)\n",
+    "new": "        return 1 + math.ceil(self.rows / self.trunk_rows_per_call)\n",
+    "expression": "eight_rank_workloads_fit_the_model_chunking",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutated_sha256": "a9157c8350570e022fa262743a4344e13ec2be8195b0db620f24a614fc552da4",
+    "summary": "tests/kaggriculture/test_configs.py:302: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true
+  },
+  {
+    "name": "independent_headroom_head_calls",
+    "path": "python/owl/model/kaggriculture_workload.py",
+    "old": "        return math.ceil(self.rows / self.head_rows_per_call)\n",
+    "new": "        return 1 + math.ceil(self.rows / self.head_rows_per_call)\n",
+    "expression": "eight_rank_workloads_fit_the_model_chunking",
+    "files": [
+      "tests/kaggriculture/test_configs.py"
+    ],
+    "command": [
+      "/Users/poonszesen/kg-v3-8rank/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "tests/kaggriculture/test_configs.py",
+      "-k",
+      "eight_rank_workloads_fit_the_model_chunking",
+      "-q"
+    ],
+    "exit_code": 1,
+    "before_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "mutated_sha256": "ede644e26b6b5a298463a70a6c58e035cffff8453a49f2882a5559a4b5c458af",
+    "summary": "tests/kaggriculture/test_configs.py:302: AssertionError\n=========================== short test summary info ============================\nFAILED tests/kaggriculture/test_configs.py::test_eight_rank_workloads_fit_the_model_chunking\n1 failed, 49 deselected in 0.05s",
+    "restored_sha256": "6cb6263e3a024642ad25954ed049cc0886608013325d4ce3c9da2f725a1518fa",
+    "restored_byte_exact": true
+  }
+]
