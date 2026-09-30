@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggle packaging ships the BC agent as a native, validated tarball"
-description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B."
+description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B."
 tags: ["kaggriculture-v3", "adaptation", "packaging", "kaggle-runtime"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
@@ -25,6 +25,14 @@ sources:
   - resource: "repository:ops/rebuild-2026-09-29/7.4/pod-episode-self-seed20260930.json"
   - resource: "repository:ops/rebuild-2026-09-29/7.4/pod-episode-starter-seat1-seed20260931.json"
   - resource: "repository:ops/rebuild-2026-09-29/7.4/py-prepare.log"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/validation.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/kaggle_mode_episode.py"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/summarize_cli_run.py"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/run_validation.sh"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/receipts/episode-starter-seat0-seed20261000.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/receipts/episode-starter-seat1-seed20261001.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/receipts/cli-run-self-seed20261002-summary.json"
+  - resource: "repository:ops/rebuild-2026-09-29/7.4-ship/validation/receipts/venv-kaggle-freeze.txt"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/agent.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/core.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/envs/kaggriculture/kaggriculture.json"
@@ -75,7 +83,8 @@ archive hash and size.
 - Fallback: in non-strict mode, any exception or failed validation returns
   `{"farmer":["PASS"],"hands":[],"market":[]}` and increments a counter. So does
   a remaining overage bank below 2 s. Strict mode (`KAGGRICULTURE_AGENT_STRICT=1`)
-  re-raises instead, and every qualification here used it.
+  re-raises instead. The three qualifying episodes used it; the three
+  Kaggle-mode episodes below did not.
 - Native module: `owl/rs.abi3.so`, 3,477,136 bytes, SHA-256 `3558c26f…5375530`.
   It was built on the pod from clean `f66acf8` with CPython 3.11.13 and
   `maturin build --release --compatibility linux`. It is an ELF64 x86-64
@@ -108,11 +117,44 @@ returned the fallback PASS.
 `just py-prepare` passed on the ship branch with 2,777 passed and 18 skipped
 (`py-prepare.log`).
 
+### Kaggle-mode validation
+
+`ops/rebuild-2026-09-29/7.4-ship/validation/validation.json` summarizes three
+more episodes. The archive (`00e67809…3839`) was unpacked fresh on the pod, and
+all 65 manifest files were re-hashed with no mismatch. The venv was new: uv,
+CPython 3.11.13, and only torch 2.6.0+cpu, numpy 2.4.6, pydantic 2.12.4,
+pyyaml 6.0.3 and kaggle-environments 1.32.7 with their dependencies. Runs used
+`nice -n 19` with no GPU visible. This is Kaggle mode: `debug=False`,
+`KAGGRICULTURE_AGENT_STRICT` unset (the fallback is live), the agent directory
+not on `sys.path`, and a working directory outside it. The env configuration
+gives `actTimeout` 1 s, a 60 s `remainingOverageTime` bank, 720 steps and a
+1,200 s `runTimeout`.
+
+| Episode | Steps, bad statuses | Calls, exceptions, invalid raw | Turn 0 / steady mean / steady max (s) | Min overage (s) | Peak RSS (MiB) | Banks | Fallbacks |
+|---|---|---|---|---|---|---|---|
+| BC seat 0 vs `starter`, seed 20261000 | 720, 0 | 719, 0, 0 | 1.316 / 0.122 / 0.260 | 59.68 | 459 | BC 39,981, starter 3,636 | 0 |
+| BC seat 1 vs `starter`, seed 20261001 | 720, 0 | 719, 0, 0 | 1.264 / 0.121 / 0.242 | 59.74 | 458 | BC 33,352, starter 3,596 | 0 |
+| CLI `kaggle-environments run`, self-play, seed 20261002 | 720, 0 | 719 per seat | seat 0: 1.219 / 0.122 / 0.162; seat 1: 0.457 / 0.122 / 0.136 | 59.78 / 60.0 | 625 | 62,278 / 61,665 | 0 |
+
+"Fallbacks" means the agent's own counters for caught errors and overage-budget
+PASSes, its printed fallback lines, PASS returns and non-empty stderr; all were
+zero. The kaggriculture interpreter has no invalid-action penalty or status:
+illegal unit actions are silent no-ops. Legality is therefore the framework
+statuses plus the agent's validator applied to every raw returned action.
+kaggle-environments 1.32.7 ships no dedicated agent-validation action, so its
+CLI `run` of the submission against itself, the shape of Kaggle's validation
+episode, stands in. Peak RSS is for the whole process: the env, the opponent
+and the agent (or both agent copies). Replays stay on the pod in
+`/root/ship/validate/out/`, and their hashes are in the receipts.
+
 ## Reusable findings
 
 - **Timing.** The budget is 1 s per turn plus a 60 s per-seat overage bank.
   Imports, weight load and warm-up bill to turn 0 because the file agent is
-  `exec`'d lazily inside the first timed call.
+  `exec`'d lazily inside the first timed call. In a fresh process the first
+  copy's turn 0 took 1.22 to 1.32 s on the pod. That exceeds `actTimeout` and
+  draws about 0.3 s from the 60 s bank, which is legal. A second copy in the
+  same process took 0.46 s, because torch was already imported.
 - **Loader.**
   - It picks the last callable in `main.py`.
   - It injects `configuration["__raw_path__"]`, which the Rust config envelope
@@ -162,9 +204,11 @@ returned the fallback PASS.
   rank channels depend on it.
 - No timing here is Kaggle hardware. The pod numbers had no vCPU quota, and the
   container numbers are emulated.
-- The episodes validate packaging and legality on three seeds, not strength.
-  The single win over `starter` is one seed and seat; the evaluation panel is
-  Task 7.2.
+- The episodes validate packaging and legality on six seeds, not strength.
+  The three wins over `starter` are one seed per seat assignment; the
+  evaluation panel is Task 7.2.
+- The Kaggle-mode venv uses the torch 2.6.0 CPU wheel, not the image's
+  `+cu124` build, on a glibc 2.39 host.
 - Only the latest 2 submissions count for the final leaderboard, so a new
   submission displaces an older one. The owner decides.
 

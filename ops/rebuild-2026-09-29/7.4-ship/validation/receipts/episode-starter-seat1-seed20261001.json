@@ -1,0 +1,123 @@
+{
+  "ok": true,
+  "mode": "kaggle (debug=False, strict unset, agent dir not on sys.path)",
+  "seed": 20261001,
+  "agent_seat": 1,
+  "opponent": "starter",
+  "wall_s": 89.554,
+  "limits": {
+    "episodeSteps": 720,
+    "actTimeout_s": 1.0,
+    "initial_remainingOverageTime_s": 60.0,
+    "runTimeout_s": 1200.0
+  },
+  "completion": {
+    "recorded_steps": 720,
+    "final_statuses": [
+      "DONE",
+      "DONE"
+    ],
+    "bad_status_count": 0,
+    "bad_statuses": []
+  },
+  "legality": {
+    "calls": 719,
+    "expected_calls": 719,
+    "exceptions": 0,
+    "invalid_raw_actions": 0,
+    "first_problems": [],
+    "env_note": "kaggriculture.py treats illegal unit actions as silent no-ops (no penalty, no status); framework INVALID/ERROR/TIMEOUT statuses are counted under completion"
+  },
+  "timing_s": {
+    "all_calls": {
+      "n": 719,
+      "mean": 0.122169,
+      "p50": 0.120296,
+      "p95": 0.121128,
+      "p99": 0.123135,
+      "max": 1.26438
+    },
+    "turn0": 1.26438,
+    "steady": {
+      "n": 718,
+      "mean": 0.120578,
+      "p50": 0.120296,
+      "p95": 0.121123,
+      "p99": 0.122931,
+      "max": 0.24186
+    },
+    "calls_over_actTimeout": 1,
+    "overage_used_s": 0.26438,
+    "min_remaining_overage_s": 59.73562
+  },
+  "memory_mib": {
+    "process_start": {
+      "rss_mib": 17.3,
+      "hwm_mib": 17.3,
+      "ru_maxrss_mib": 14.0
+    },
+    "process_end": {
+      "rss_mib": 457.7,
+      "hwm_mib": 457.7,
+      "ru_maxrss_mib": 451.4
+    },
+    "rss_after_agent_calls": {
+      "n": 719,
+      "mean": 439.763914,
+      "p50": 439.78515625,
+      "p95": 456.1015625,
+      "p99": 457.375,
+      "max": 457.671875
+    },
+    "note": "one process holds the env, the opponent and the packaged agent (Kaggle's in-process file-agent path)"
+  },
+  "result": {
+    "final_rewards": [
+      3596.0,
+      33352.0
+    ],
+    "final_banks": [
+      3596.0,
+      33352.0
+    ],
+    "packaged_seat_bank": 33352.0,
+    "opponent_bank": 3596.0,
+    "winner": "seat1",
+    "packaged_agent_won": true,
+    "note": "one game; a packaging check, not a strength claim"
+  },
+  "fallback": {
+    "agent_counters": {
+      "calls": 719,
+      "caught_errors": 0,
+      "budget_passes": 0,
+      "strict": false
+    },
+    "pass_action_returns": 0,
+    "caught_error_lines": 0,
+    "budget_pass_lines": 0,
+    "stderr_nonempty_calls": 0
+  },
+  "replay": {
+    "path": "/root/ship/validate/out/replay-starter-seat1-seed20261001.json",
+    "bytes": 7414266,
+    "sha256": "2e5fc42d69dcea61d4a8eba07c931020446b720005b8303f60aba3c8f31eb084"
+  },
+  "loaded_from": {
+    "owl": "/root/ship/validate/agent/owl/__init__.py",
+    "owl.rs": "/root/ship/validate/agent/owl/rs.abi3.so"
+  },
+  "manifest_sha256": "4872a2d3f982320ed79559eb3b6146bf11fd7667eec0f82f12153ad6f1714a94",
+  "runtime": {
+    "python": "3.11.13",
+    "executable": "/root/ship/validate/venv-kaggle/bin/python",
+    "torch": "2.6.0+cpu",
+    "torch_threads": 1,
+    "kaggle_environments": "1.32.7",
+    "kaggriculture_py_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+    "platform": "Linux-6.8.0-137-generic-x86_64-with-glibc2.39",
+    "cpu_count": 256,
+    "cuda_visible_devices": "",
+    "nice": 19
+  }
+}
