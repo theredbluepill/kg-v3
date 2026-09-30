@@ -1,0 +1,74 @@
+"""Write a random-init checkpoint for -o rl.teacher_init (scratch launch of the margin preset).
+
+run_ppo requires a teacher source for a fresh Kaggriculture last_best launch
+(_require_kaggriculture_teacher_source); the run bans --load-model-weights. This
+builds the model with run_ppo's own constructor (reset_parameters=True) under
+torch seed SEED on cuda:0, saves every CHECKPOINT_KEY with env_steps 0, and
+writes the preset config beside it as config.yaml. It is an independent draw:
+the student's own init in the run is unseeded, so teacher != student at start.
+Then it runs run_ppo's teacher-source guard and _initial_last_best_model on it.
+"""
+import importlib.util
+import sys
+from pathlib import Path
+
+import torch
+
+SEED = 20260930
+OUT = Path("/root/scratch-sp/teacher-init")
+PRESET = Path("configs/kaggriculture_4rank_margin.yaml")
+spec = importlib.util.spec_from_file_location("run_ppo", "scripts/run_ppo.py")
+m = importlib.util.module_from_spec(spec)
+sys.modules["run_ppo"] = m
+spec.loader.exec_module(m)
+from owl.train.optimizer import create_lr_scheduler, create_optimizer  # noqa: E402
+from owl.train.ppo import CHECKPOINT_KEYS  # noqa: E402
+
+cfg = m.FullConfig.from_file(PRESET)
+dev = torch.device("cuda:0")
+torch.manual_seed(SEED)
+model, _ = m._create_training_model_for_config(cfg, device=dev, reset_parameters=True)
+opt = create_optimizer(model, cfg.optimizer)
+sched = create_lr_scheduler(opt, cfg.optimizer.lr_schedule)
+ckpt = {
+    "model": model.state_dict(),
+    "optimizer": opt.state_dict(),
+    "lr_scheduler": None if sched is None else sched.state_dict(),
+    "env_steps": 0,
+    "optimizer_steps": 0,
+    "player_step_total": 0,
+    "total_games_played": 0,
+    "total_active_entities": 0,
+    "target_kl_exceeded_total": 0,
+    "wandb_run_id": None,
+}
+assert set(ckpt) == set(CHECKPOINT_KEYS), set(ckpt) ^ set(CHECKPOINT_KEYS)
+OUT.mkdir(parents=True, exist_ok=True)
+path = OUT / "checkpoint_random_init.pt"
+if path.exists():
+    raise SystemExit(f"refusing to overwrite {path}")
+torch.save(ckpt, path)
+cfg.to_file(OUT / "config.yaml")
+print("wrote", path, "seed", SEED)
+
+# Launch-path checks with the override applied as run_ppo would.
+cfg2 = m.FullConfig.from_file(
+    PRESET, overrides=m._parse_cli_overrides([[f"rl.teacher_init={path}"]])
+)
+cfg2 = m._resolve_teacher_init_path(cfg2, PRESET)
+print("teacher_init", cfg2.rl.teacher_init, "teacher_mode", cfg2.rl.teacher_mode)
+teacher = m._initial_last_best_model(cfg2, device=dev)
+assert teacher is not None
+saved = {k: v.float() for k, v in model.state_dict().items()}
+loaded = {
+    k.replace("_orig_mod.", ""): v.float() for k, v in teacher.state_dict().items()
+}
+assert set(saved) == set(loaded), set(saved) ^ set(loaded)
+same = all(torch.equal(saved[k], loaded[k]) for k in saved)
+print("last_best built from teacher_init; weights equal to the saved init:", same)
+m._require_kaggriculture_teacher_source(
+    cfg2,
+    m.FreshLaunch(config_path=PRESET, output_dir=Path("/nonexistent"), overrides={}),
+)
+print("teacher-source guard passes with the override")
+7922f57399578a2adff6d5679ac1dae9ad9c880c0e3f0e4f2b10f0c4d1c7254f  /root/scratch-sp/teacher-init/checkpoint_random_init.pt

@@ -1,0 +1,78 @@
+Wed Sep 30 00:02:06 UTC 2026
+Wed Sep 30 00:02:06 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX PRO 6000 Blac...    On  |   00000000:06:00.0 Off |                    0 |
+| N/A   32C    P8             34W /  600W |       0MiB /  97887MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA RTX PRO 6000 Blac...    On  |   00000000:77:00.0 Off |                    0 |
+| N/A   33C    P8             36W /  600W |       0MiB /  97887MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA RTX PRO 6000 Blac...    On  |   00000000:F4:00.0 Off |                    0 |
+| N/A   33C    P8             37W /  600W |       0MiB /  97887MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA RTX PRO 6000 Blac...    On  |   00000000:F5:00.0 Off |                    0 |
+| N/A   33C    P8             35W /  600W |       0MiB /  97887MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+index, name, pci.bus_id, memory.total [MiB], power.limit [W], clocks.max.sm [MHz], driver_version
+0, NVIDIA RTX PRO 6000 Blackwell Server Edition, 00000000:06:00.0, 97887 MiB, 600.00 W, 2430 MHz, 595.91.07
+1, NVIDIA RTX PRO 6000 Blackwell Server Edition, 00000000:77:00.0, 97887 MiB, 600.00 W, 2430 MHz, 595.91.07
+2, NVIDIA RTX PRO 6000 Blackwell Server Edition, 00000000:F4:00.0, 97887 MiB, 600.00 W, 2430 MHz, 595.91.07
+3, NVIDIA RTX PRO 6000 Blackwell Server Edition, 00000000:F5:00.0, 97887 MiB, 600.00 W, 2430 MHz, 595.91.07
+	[4mGPU0	GPU1	GPU2	GPU3	NIC0	NIC1	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	NODE	SYS	SYS	NODE	NODE	0-63,128-191	0		N/A
+GPU1	NODE	 X 	SYS	SYS	PIX	PIX	0-63,128-191	0		N/A
+GPU2	SYS	SYS	 X 	PIX	SYS	SYS	64-127,192-255	1		N/A
+GPU3	SYS	SYS	PIX	 X 	SYS	SYS	64-127,192-255	1		N/A
+NIC0	NODE	PIX	SYS	SYS	 X 	PIX				
+NIC1	NODE	PIX	SYS	SYS	PIX	 X 				
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+
+NIC Legend:
+
+  NIC0: rocep117s0f0
+  NIC1: rocep117s0f1
+
+CPU(s):                                  256
+Model name:                              AMD EPYC 9535 64-Core Processor
+Socket(s):                               2
+CPU(s) scaling MHz:                      43%
+NUMA node(s):                            2
+NUMA node0 CPU(s):                       0-63,128-191
+NUMA node1 CPU(s):                       64-127,192-255
+256
+               total        used        free      shared  buff/cache   available
+Mem:            1511         155         344           0        1029        1356
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+overlay         500G   20G  481G   4% /
+PRETTY_NAME="Ubuntu 24.04.3 LTS"
+NAME="Ubuntu"
+6.8.0-137-generic
+git version 2.43.0
