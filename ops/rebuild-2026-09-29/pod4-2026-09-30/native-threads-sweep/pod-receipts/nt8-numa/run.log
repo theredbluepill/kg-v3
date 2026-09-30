@@ -1,0 +1,77 @@
+Traceback (most recent call last):
+  File "/root/sweep/nt_probe.py", line 65, in <module>
+    _bind_numa()
+  File "/root/sweep/nt_probe.py", line 49, in _bind_numa
+    raise OSError(ctypes.get_errno(), "set_mempolicy failed")
+PermissionError: [Errno 1] set_mempolicy failed
+Traceback (most recent call last):
+  File "/root/sweep/nt_probe.py", line 65, in <module>
+    _bind_numa()
+  File "/root/sweep/nt_probe.py", line 49, in _bind_numa
+    raise OSError(ctypes.get_errno(), "set_mempolicy failed")
+PermissionError: [Errno 1] set_mempolicy failed
+Traceback (most recent call last):
+  File "/root/sweep/nt_probe.py", line 65, in <module>
+    _bind_numa()
+  File "/root/sweep/nt_probe.py", line 49, in _bind_numa
+    raise OSError(ctypes.get_errno(), "set_mempolicy failed")
+PermissionError: [Errno 1] set_mempolicy failed
+Traceback (most recent call last):
+  File "/root/sweep/nt_probe.py", line 65, in <module>
+    _bind_numa()
+  File "/root/sweep/nt_probe.py", line 49, in _bind_numa
+    raise OSError(ctypes.get_errno(), "set_mempolicy failed")
+PermissionError: [Errno 1] set_mempolicy failed
+E0930 00:14:04.462000 14846 torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 0 (pid: 14882) of binary: /root/kg-v3/.venv/bin/python
+Traceback (most recent call last):
+  File "/root/kg-v3/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/kg-v3/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/root/sweep/nt_probe.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-09-30_00:14:04
+  host      : 7def2d799e32
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 14883)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2026-09-30_00:14:04
+  host      : 7def2d799e32
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 14884)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2026-09-30_00:14:04
+  host      : 7def2d799e32
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 14885)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-30_00:14:04
+  host      : 7def2d799e32
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 14882)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
