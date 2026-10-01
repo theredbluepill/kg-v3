@@ -7,9 +7,10 @@
 #        [--allow-recipe-drift] [--dry-run]
 #
 # CHECKPOINT, NAME and N_GPUS may also come from the environment; flags win.
-# Recipe (unchanged from pcy5knet except the world size): configs/kaggriculture_4rank_margin.yaml
+# Recipe (the live 4-GPU run 48gyi9m5 except world size and n_envs): configs/kaggriculture_4rank_margin.yaml
 # with -o env.n_envs=12 rl.horizon=720 rl.segments_per_minibatch=1 rl.gae_lambda=1.0 and reward
-# econ_bank 0.25/150000/0.25, econ_margin 0.25/100000/0.25 (econ_shaping 0 in the preset);
+# econ_bank 0.3/150000/0.3, econ_margin 0.3/100000/0.3, econ_shaping 0.01 with econ_cap 0.1
+# (owner 2026-09-30: win/loss 0.30; 2026-10-01: "Keep the current recipe");
 # Muon 1e-4 / AdamW 5e-6, native_threads 4 and the 10M checkpoint/eval come from the preset;
 # --load-model-weights CHECKPOINT --load-model-weights-mode model_only; W&B online (spoon/kg-v3).
 # The "4rank" preset name is only its origin: run_ppo takes the world size from torchrun.
@@ -80,8 +81,9 @@ LOG=/root/runs/$NAME.log
 WLOG=/root/runs/$NAME-watchdog.log
 FROZEN=/root/sprint/$NAME
 OVERRIDES=(env.n_envs="$N_ENVS" rl.horizon=720 rl.segments_per_minibatch=1 rl.gae_lambda=1.0
-  env.reward_shaping.econ_bank_weight=0.25 env.reward_shaping.econ_bank_scale=150000 env.reward_shaping.econ_bank_cap=0.25
-  env.reward_shaping.econ_margin_weight=0.25 env.reward_shaping.econ_margin_scale=100000 env.reward_shaping.econ_margin_cap=0.25
+  env.reward_shaping.econ_bank_weight=0.3 env.reward_shaping.econ_bank_scale=150000 env.reward_shaping.econ_bank_cap=0.3
+  env.reward_shaping.econ_margin_weight=0.3 env.reward_shaping.econ_margin_scale=100000 env.reward_shaping.econ_margin_cap=0.3
+  env.reward_shaping.econ_shaping=0.01 env.reward_shaping.econ_cap=0.1
   "${EXTRA_ARR[@]+"${EXTRA_ARR[@]}"}")
 CMD=(.venv/bin/torchrun --nproc-per-node "$N_GPUS" "$FROZEN/main_probe_auto.py" scripts/run_ppo.py "$CFG" "$RUN"
   --log-mode wandb --wandb-mode online --experiment-id "$NAME"
