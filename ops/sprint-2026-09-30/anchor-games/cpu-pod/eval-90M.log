@@ -1,0 +1,73 @@
+== venv
+== preflight
+== build
+archive /Users/poonszesen/kg-v3-pkg60/artifacts/anchor-eval/90M-ft-on-6b196ef33b3d/submission.tar.gz
+  sha256 5e460d20ddfc0514e24c072cdb6d1846c2f7eda46a1bdfaef518d9a7482d44d2  bytes 24724581
+== verify
+== image
+stages: venv=0.8 preflight=0.6 build=1.9 verify=0.7 image=26.9 total=31.0
+archive: /Users/poonszesen/kg-v3-pkg60/artifacts/anchor-eval/90M-ft-on-6b196ef33b3d/submission.tar.gz
+sha256:  5e460d20ddfc0514e24c072cdb6d1846c2f7eda46a1bdfaef518d9a7482d44d2
+bytes:   24724581
+receipt: /Users/poonszesen/kg-v3-pkg60/artifacts/anchor-eval/90M-ft-on-6b196ef33b3d/PACKAGE.md
+
+launched
+games running on pod: /root/anchor-eval/games/90M-ft-on/run.log
+2026-09-30T19:13:33Z receipts=0 last: start 2026-09-30T19:12:57Z agent=/root/anchor-eval/pkgs/90M-ft-on-5e460d20ddfc/agent out=90M-ft-on parallel=30
+2026-09-30T19:14:09Z receipts=0 last: start 2026-09-30T19:12:57Z agent=/root/anchor-eval/pkgs/90M-ft-on-5e460d20ddfc/agent out=90M-ft-on parallel=30
+2026-09-30T19:14:45Z receipts=0 last: start 2026-09-30T19:12:57Z agent=/root/anchor-eval/pkgs/90M-ft-on-5e460d20ddfc/agent out=90M-ft-on parallel=30
+2026-09-30T19:15:21Z receipts=2 last: 2026-09-30T19:15:17Z 90M-smaller_market_shock-s93005-seat1 exit=0 wall=140s
+2026-09-30T19:15:57Z receipts=26 last: 2026-09-30T19:15:54Z 90M-cha22-s93001-seat1 exit=0 wall=177s
+2026-09-30T19:16:33Z receipts=30 last: 2026-09-30T19:15:59Z 90M-cha22-s93007-seat1 exit=0 wall=182s
+2026-09-30T19:17:09Z receipts=30 last: 2026-09-30T19:15:59Z 90M-cha22-s93007-seat1 exit=0 wall=182s
+2026-09-30T19:17:45Z receipts=33 last: 2026-09-30T19:17:37Z 90M-v56-s93001-seat0 exit=0 wall=129s
+2026-09-30T19:18:21Z receipts=44 last: 2026-09-30T19:18:16Z 90M-v56-s93005-seat0 exit=0 wall=147s
+2026-09-30T19:18:57Z receipts=48 last: {"receipts": 48, "qualified": 48, "engine_sha256": ["f73d27ce04a6fd5ddcdd59c618e1da8c9b6fb2f27f5cf9cdc27efad942345004"], "manifest_sha256": ["317d06bb4411e6a7a85c1c9bbc24e4d1312e527be28f11dfea1fdd6875c89275"]}
+## 90M-ft-on: 48 receipts
+{
+ "manifest": [
+  "317d06bb4411e6a7a85c1c9bbc24e4d1312e527be28f11dfea1fdd6875c89275"
+ ],
+ "engine": [
+  "f73d27ce04a6fd5ddcdd59c618e1da8c9b6fb2f27f5cf9cdc27efad942345004"
+ ],
+ "platform": [
+  "Linux-6.8.0-136-generic-x86_64-with-glibc2.39"
+ ],
+ "torch": [
+  "2.6.0+cpu"
+ ]
+}
+| anchor | games | qualified | W-L-D | own bank | anchor bank | margin (SE seeds) | default passes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cha22 | 16 | 16 | 12-4-0 | 96883.7 | 95626.7 | +1257.0 (776.9) | 0 |
+| smaller_market_shock | 16 | 16 | 12-4-0 | 96955.1 | 94140.9 | +2814.1 (1126.5) | 0 |
+| v56 | 16 | 16 | 14-2-0 | 97070.2 | 95313.4 | +1756.8 (846.0) | 0 |
+| ALL | 48 | 48 | 38-10-0 | 96969.6 | 95027.0 | +1942.6 (706.2) | 0 |
+{
+ "label": "90M",
+ "out": "90M-ft-on",
+ "rule1": "baked on",
+ "rule2": "off",
+ "checkpoint": "/Users/poonszesen/kg-v3-runs/earn720-r30e01w30-8xh200-from-60M-20261001/ckpt-90M/checkpoint_00_090_086_144.pt",
+ "checkpoint_sha256": "6b196ef33b3db9dab74220421f147d4bb9cdb49562115e3e7ac822947a11d19a",
+ "config": "/Users/poonszesen/kg-v3-runs/earn720-r30e01w30-8xh200-from-60M-20261001/ckpt-90M/config.yaml",
+ "config_sha256": "f7a1349a651904e9374c39a3aff4fa2460613eaf011d9fc319017af24eae377c",
+ "package_dir": "/Users/poonszesen/kg-v3-pkg60/artifacts/anchor-eval/90M-ft-on-6b196ef33b3d",
+ "archive_sha256": "5e460d20ddfc0514e24c072cdb6d1846c2f7eda46a1bdfaef518d9a7482d44d2",
+ "manifest_sha256": "317d06bb4411e6a7a85c1c9bbc24e4d1312e527be28f11dfea1fdd6875c89275",
+ "pod": "<terminated-cpu-pod-ip>:32670",
+ "pod_package": "/root/anchor-eval/pkgs/90M-ft-on-5e460d20ddfc",
+ "pod_games": "/root/anchor-eval/games/90M-ft-on",
+ "parallel": 30,
+ "wall_s": {
+  "package": 31.2,
+  "ship": 51.2,
+  "games_poll": 362.9,
+  "games_pod_run_log": 351,
+  "copy_back": 16.8,
+  "total": 462.1
+ },
+ "games": 48,
+ "qualified": 48
+}

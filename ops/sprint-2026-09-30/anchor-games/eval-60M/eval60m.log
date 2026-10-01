@@ -1,0 +1,199 @@
+smaller_market_shock 93001 0 done
+smaller_market_shock 93001 1 done
+smaller_market_shock 93002 0 done
+smaller_market_shock 93002 1 done
+smaller_market_shock 93003 0 done
+smaller_market_shock 93003 1 done
+smaller_market_shock 93004 0 done
+smaller_market_shock 93004 1 done
+smaller_market_shock 93005 0 done
+smaller_market_shock 93005 1 done
+smaller_market_shock 93006 0 done
+smaller_market_shock 93006 1 done
+smaller_market_shock 93007 0 done
+smaller_market_shock 93007 1 done
+smaller_market_shock 93008 0 done
+smaller_market_shock 93008 1 done
+cha22 93001 0 done
+cha22 93001 1 done
+cha22 93002 0 done
+cha22 93002 1 done
+cha22 93003 0 done
+cha22 93003 1 done
+cha22 93004 0 done
+cha22 93004 1 done
+cha22 93005 0 done
+cha22 93005 1 done
+cha22 93006 0 done
+cha22 93006 1 done
+cha22 93007 0 done
+cha22 93007 1 done
+cha22 93008 0 done
+cha22 93008 1 done
+v56 93001 0 done
+v56 93001 1 done
+v56 93002 0 done
+v56 93002 1 done
+v56 93003 0 done
+v56 93003 1 done
+v56 93004 0 done
+v56 93004 1 done
+v56 93005 0 done
+v56 93005 1 done
+v56 93006 0 done
+v56 93006 1 done
+v56 93007 0 done
+v56 93007 1 done
+v56 93008 0 done
+v56 93008 1 done
+## Health
+
+```json
+{
+ "c50-off": {
+  "games": 48,
+  "qualified": 48,
+  "calls_719": 48,
+  "exceptions": 0,
+  "invalid_raw_actions": 0,
+  "default_pass_fallbacks": 0,
+  "bad_statuses": 0,
+  "manifest_sha256": [
+   "b797d1ac50600c11465d0eaca22dbc5d0fff89a85de732565d0067298ab6d3ee"
+  ],
+  "kaggriculture_py_sha256": [
+   "f73d27ce04a6fd5ddcdd59c618e1da8c9b6fb2f27f5cf9cdc27efad942345004"
+  ],
+  "mean_wall_s": 82.3
+ },
+ "c50-ft": {
+  "games": 48,
+  "qualified": 48,
+  "calls_719": 48,
+  "exceptions": 0,
+  "invalid_raw_actions": 0,
+  "default_pass_fallbacks": 0,
+  "bad_statuses": 0,
+  "manifest_sha256": [
+   "9786d766a99410aac45cae94469b2634b699b90009b3792cb9011c5caadb2a7c"
+  ],
+  "kaggriculture_py_sha256": [
+   "f73d27ce04a6fd5ddcdd59c618e1da8c9b6fb2f27f5cf9cdc27efad942345004"
+  ],
+  "mean_wall_s": 73.1
+ },
+ "60M-off": {
+  "games": 48,
+  "qualified": 48,
+  "calls_719": 48,
+  "exceptions": 0,
+  "invalid_raw_actions": 0,
+  "default_pass_fallbacks": 0,
+  "bad_statuses": 0,
+  "manifest_sha256": [
+   "2d48dd16885e16ce261a72b044cb9109442f39f2cb2e60a2af83ed185f44d58b"
+  ],
+  "kaggriculture_py_sha256": [
+   "f73d27ce04a6fd5ddcdd59c618e1da8c9b6fb2f27f5cf9cdc27efad942345004"
+  ],
+  "mean_wall_s": 93.2,
+  "manifest_is_pkg_60M": true
+ },
+ "60M-ft": {
+  "games": 48,
+  "qualified": 48,
+  "calls_719": 48,
+  "exceptions": 0,
+  "invalid_raw_actions": 0,
+  "default_pass_fallbacks": 0,
+  "bad_statuses": 0,
+  "manifest_sha256": [
+   "2d48dd16885e16ce261a72b044cb9109442f39f2cb2e60a2af83ed185f44d58b"
+  ],
+  "kaggriculture_py_sha256": [
+   "f73d27ce04a6fd5ddcdd59c618e1da8c9b6fb2f27f5cf9cdc27efad942345004"
+  ],
+  "mean_wall_s": 90.3,
+  "manifest_is_pkg_60M": true
+ }
+}
+```
+
+## Rule-1 checks (60M-ft vs 60M-off)
+
+```json
+{
+ "games": 48,
+ "only_our_final_action_differs": 48,
+ "on_final_action_equals_rule_on_off_obs": 48,
+ "rule_changed_action": 48,
+ "rule_obs_step_718": 48,
+ "opponent_bank_unchanged": 38,
+ "delta_negative": 0,
+ "flips_L_to_W": 4
+}
+```
+
+## Per arm and anchor
+
+| arm | anchor | n | W-L | own bank | anchor bank | margin | unsold shed/carried/tile |
+|---|---|---|---|---|---|---|---|
+| c50-off | smaller_market_shock | 16 | 4-12 | 98,139 | 102,511 | -4,372 | 21.9 / 8.8 / 9.3 |
+| c50-off | cha22 | 16 | 2-14 | 96,107 | 105,563 | -9,456 | 17.4 / 10.9 / 12.6 |
+| c50-off | v56 | 16 | 0-16 | 95,797 | 106,149 | -10,352 | 21.4 / 14.3 / 10.9 |
+| c50-off | all | 48 | 6-42 | 96,681 | 104,741 | -8,060 | 20.2 / 11.3 / 10.9 |
+| c50-ft | smaller_market_shock | 16 | 4-12 | 99,086 | 102,511 | -3,425 | 0.0 / 8.8 / 9.3 |
+| c50-ft | cha22 | 16 | 2-14 | 96,786 | 105,563 | -8,777 | 0.0 / 10.9 / 12.6 |
+| c50-ft | v56 | 16 | 0-16 | 96,792 | 106,149 | -9,356 | 0.0 / 14.3 / 10.9 |
+| c50-ft | all | 48 | 6-42 | 97,555 | 104,741 | -7,186 | 0.0 / 11.3 / 10.9 |
+| 60M-off | smaller_market_shock | 16 | 2-14 | 95,732 | 97,745 | -2,013 | 16.5 / 14.9 / 8.4 |
+| 60M-off | cha22 | 16 | 0-16 | 96,188 | 101,392 | -5,204 | 21.3 / 12.9 / 11.2 |
+| 60M-off | v56 | 16 | 2-14 | 95,123 | 100,431 | -5,308 | 20.9 / 14.5 / 13.9 |
+| 60M-off | all | 48 | 4-44 | 95,681 | 99,856 | -4,175 | 19.6 / 14.1 / 11.2 |
+| 60M-ft | smaller_market_shock | 16 | 4-12 | 96,526 | 97,741 | -1,216 | 0.0 / 14.9 / 8.4 |
+| 60M-ft | cha22 | 16 | 2-14 | 96,898 | 101,391 | -4,493 | 0.0 / 12.9 / 11.2 |
+| 60M-ft | v56 | 16 | 2-14 | 96,226 | 100,431 | -4,204 | 0.0 / 14.5 / 13.9 |
+| 60M-ft | all | 48 | 8-40 | 96,550 | 99,854 | -3,304 | 0.0 / 14.1 / 11.2 |
+
+## Paired: 60M-off vs c50-off
+
+| anchor | W-L 60M-off | W-L c50-off | flips L->W / W->L | Δ margin mean ± SE (8 seeds) | better on k/8 seeds | Δ own bank ± SE | Δ anchor bank ± SE | min / max Δ margin (game) |
+|---|---|---|---|---|---|---|---|---|
+| smaller_market_shock | 2-14 | 4-12 | 0 / 2 | **+2,359 ± 770** | 7/8 | -2,407 ± 777 | -4,766 ± 973 | -1,266 / +4,748 |
+| cha22 | 0-16 | 2-14 | 0 / 2 | **+4,252 ± 2,356** | 4/8 | +81 ± 1,904 | -4,171 ± 1,680 | -4,489 / +14,230 |
+| v56 | 2-14 | 0-16 | 2 / 0 | **+5,044 ± 1,356** | 8/8 | -674 ± 880 | -5,718 ± 1,155 | +1,138 / +12,298 |
+| all | 4-44 | 6-42 | 2 / 4 | **+3,885 ± 1,251** | 7/8 | -1,000 ± 808 | -4,885 ± 986 | -4,489 / +14,230 |
+
+## Paired: 60M-ft vs c50-ft
+
+| anchor | W-L 60M-ft | W-L c50-ft | flips L->W / W->L | Δ margin mean ± SE (8 seeds) | better on k/8 seeds | Δ own bank ± SE | Δ anchor bank ± SE | min / max Δ margin (game) |
+|---|---|---|---|---|---|---|---|---|
+| smaller_market_shock | 4-12 | 4-12 | 2 / 2 | **+2,210 ± 849** | 7/8 | -2,560 ± 821 | -4,770 ± 973 | -1,424 / +5,672 |
+| cha22 | 2-14 | 2-14 | 0 / 0 | **+4,284 ± 2,348** | 4/8 | +112 ± 1,880 | -4,172 ± 1,680 | -4,118 / +14,699 |
+| v56 | 2-14 | 0-16 | 2 / 0 | **+5,152 ± 1,495** | 8/8 | -566 ± 786 | -5,718 ± 1,155 | +685 / +12,983 |
+| all | 8-40 | 6-42 | 4 / 2 | **+3,882 ± 1,341** | 7/8 | -1,005 ± 843 | -4,887 ± 986 | -4,118 / +14,699 |
+
+## Paired: 60M-ft vs 60M-off (rule 1)
+
+| anchor | W-L 60M-ft | W-L 60M-off | flips L->W / W->L | Δ margin mean ± SE (8 seeds) | better on k/8 seeds | Δ own bank ± SE | Δ anchor bank ± SE | min / max Δ margin (game) |
+|---|---|---|---|---|---|---|---|---|
+| smaller_market_shock | 4-12 | 2-14 | 2 / 0 | **+797 ± 287** | 8/8 | +794 ± 287 | -3 ± 2 | +104 / +2,022 |
+| cha22 | 2-14 | 0-16 | 2 / 0 | **+711 ± 172** | 8/8 | +710 ± 172 | -1 ± 1 | +15 / +1,369 |
+| v56 | 2-14 | 2-14 | 0 / 0 | **+1,103 ± 322** | 8/8 | +1,103 ± 322 | +0 ± 0 | +55 / +2,194 |
+| all | 8-40 | 4-44 | 4 / 0 | **+870 ± 242** | 8/8 | +869 ± 243 | -1 ± 1 | +15 / +2,194 |
+
+## 60M-off: wins and closest losses (with c50-off same game)
+
+| game | 60M-off margin | c50-off margin | own | anchor |
+|---|---|---|---|---|
+| smaller_market_shock s93008 seat0 (win) | +4,435 | +2,066 | 67,207 | 62,772 |
+| smaller_market_shock s93008 seat1 (win) | +4,435 | +2,066 | 67,207 | 62,772 |
+| v56 s93008 seat0 (win) | +1,483 | -2,134 | 68,007 | 66,524 |
+| v56 s93008 seat1 (win) | +1,483 | -2,134 | 68,007 | 66,524 |
+| cha22 s93008 seat0 | -229 | +4,260 | 64,182 | 64,411 |
+| cha22 s93008 seat1 | -229 | +4,260 | 64,182 | 64,411 |
+| smaller_market_shock s93001 seat0 | -292 | -4,304 | 96,777 | 97,069 |
+| smaller_market_shock s93001 seat1 | -292 | -4,304 | 96,777 | 97,069 |
+| v56 s93005 seat0 | -802 | -1,940 | 83,334 | 84,136 |
+| v56 s93005 seat1 | -802 | -1,940 | 83,334 | 84,136 |
+| smaller_market_shock s93005 seat0 | -884 | +382 | 83,567 | 84,451 |
