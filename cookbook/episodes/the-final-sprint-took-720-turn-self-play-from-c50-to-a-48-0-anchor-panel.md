@@ -9,6 +9,9 @@ sources:
   - resource: "user-directive:2026-09-30:give-back-0.075-to-win-lose-to-make-it-0.3"
   - resource: "user-directive:2026-09-30:let-anchors-speak-will-be-good"
   - resource: "user-directive:2026-10-01:record-pending-knowledge-into-the-cookbook-after-eval"
+  - resource: "user-directive:2026-10-01:its-silver-zone"
+  - resource: "user-directive:2026-10-01:one-day-earlier-and-2x-model-params-could-have-gone-further"
+  - resource: "user-directive:2026-09-30:relaunch-from-90m-100m-130m"
   - resource: "repository:ops/sprint-2026-09-30/README.md"
   - resource: "repository:ops/sprint-2026-09-30/sprint-facts.md"
   - resource: "repository:ops/sprint-2026-09-30/MANIFEST-skipped.tsv"
@@ -82,7 +85,7 @@ All times are UTC. The consolidated numbers are in `ops/sprint-2026-09-30/sprint
 | …-from-100M-sps-20261001 | 8x H200, code 17b3068d + compiled heads | 100M (manual) | dxhey4da | 110M 0.50, 120M 0.60, 130M 0.65 |
 | …-from-130M-sps-20261001 | same | 130M (manual) | r4zqqs49 | 140M 0.70 promoted, 150M 0.65, 160M 0.60, 170M 0.80 promoted, 180M 0.90 promoted, 190M 0.55, 200M 0.65, 210M 0.65; stopped 23:51 |
 
-Trainer promotions: 70M, 80M, 140M, 170M and 180M. The 90M, 100M and 130M starts were manual relaunches. The fact sheet labels 90M an owner promotion and records no actor for 100M or 130M; no owner quote exists for any of them. The 90M and 100M relaunches (19:12:25 and 19:46:23) came before their panels ran (from 19:12:57 and 19:46:35). Only the 130M relaunch (21:03:58) followed its panel, which finished at about 21:02 ([[../decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|LR Decision]]).
+Trainer promotions: 70M, 80M, 140M, 170M and 180M. The 90M, 100M and 130M starts were manual relaunches. All three were owner-directed (verbatim orders in the [[../decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|LR Decision]]; e.g. 90M: "it's ok let's pull 90m to local, and we promote it, start a run with 90M, then eval with 90M."). The 90M and 100M relaunches (19:12:25 and 19:46:23) came before their panels ran (from 19:12:57 and 19:46:35). Only the 130M relaunch (21:03:58) followed its panel, which finished at about 21:02 ([[../decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|LR Decision]]).
 
 Checkpoint sha256 prefixes:
 
@@ -182,7 +185,8 @@ An earlier version of this episode said the r4zqqs49 log and receipts were lost.
 - **One training seed, chained starts.** Each relaunch reset the optimizer, so gains mix more training with the starts.
 - **Selection panel, not held-out qualification.** It has 3 anchors and 8 seeds. 08bc was played rule off and the rest rule on; 60M's delta is from the rule-off arm.
 - **The fixed-shop engine is not the board's earlier harness.** Margins here do not compare directly with the earlier f610 −21.1k / −28.8k table in [[../references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|the credit-window Reference]].
-- **Ladder results.** Kaggle scores and ranks for 90M, 170M and 210M are not recorded here.
+- **Ladder results.** Kaggle scores and ranks for 90M, 170M and 210M are not recorded here. After the deadline the owner reported (verbatim, 2026-10-01): "it's silve zone", i.e. the team was within the silver cutoff at that time. That is owner-reported, not checked here, and provisional: per a Kaggle staff post the owner shared, submissions keep playing episodes for two weeks after the deadline and a single Bradley-Terry tournament then sets the final leaderboard.
+- **Owner hypothesis for next time (untested).** Owner (verbatim, 2026-10-01): "if we've done this 1 day earlier and 2X~ the model param it could have gone further." Supporting reasoning, not evidence: the run was still promoting at 180M, and the GPUs were 80–90% idle during rollout (the per-turn cost was CPU stepping and Python dispatch), so a ~2x model would mainly lengthen the ~2.7 s update. Neither a larger model nor a longer run was tested.
 - **Attribution.** Reward, window, batch size and more steps changed together along the lineage. The panel gain is not attributed to any one of them.
 
 Related: [[../decisions/the-kaggriculture-v3-board|the v3 board]], the owner's sprint Decisions on [[../decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|the LR hold]], [[../decisions/keep-the-sprint-in-pure-self-play-without-pfsp-or-lambda-scheduling|pure self-play]] and [[../decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|submission slots]], [[../references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput]], [[../references/final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|rule 1]], [[../references/late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|rule 2]], [[../references/kaggle-packaging-reuses-the-starter-submission-path|Kaggle packaging]].

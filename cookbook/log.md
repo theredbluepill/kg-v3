@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-10-01 — Owner-directed relaunches, post-deadline notes and the CPU-pod panel workflow
+
+- **Attribution corrected again.** The 90M, 100M and 130M relaunches were owner-directed; the verbatim orders are now quoted in [[decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|the LR-hold Decision]] (the previous correction said no quote existed — the quotes were in the session, not in the fact sheet). 90M and 100M were still relaunched before their panels ran.
+- **Post-deadline notes** in [[episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|the sprint episode]]: owner-reported "it's silve zone" (provisional; final ranks come from a Bradley-Terry tournament after two more weeks of episodes), and the owner's untested hypothesis that one more day and ~2x model parameters could have gone further.
+- **New Workflow:** [[workflows/evaluate-each-checkpoint-on-the-anchor-panel-with-a-cpu-pod|Evaluate each checkpoint on the anchor panel with a CPU pod]].
+
 ## 2026-10-01 — Correct the final-sprint records against the evidence
 
 A review of the sprint record (commit `d916bbdc`) checked its claims against `ops/` and the Mac run folders. This entry corrects what it found, and it supersedes the matching claims in the entry below.

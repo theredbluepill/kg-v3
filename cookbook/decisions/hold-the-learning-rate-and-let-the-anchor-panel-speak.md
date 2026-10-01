@@ -1,12 +1,13 @@
 ---
 type: "Decision"
 title: "Hold the learning rate and let the anchor panel speak"
-description: "Owner decision for the final sprint (2026-09-30): \"let anchors speak will be good\", given on the learning rate. Keep Muon 1e-4 (AdamW 5e-6); per the sprint fact sheet, change it only if the anchor panel stalls and KL and clip fraction shrink. It never changed. The trainer's self-play promotion (>= 0.70 vs last_best every 10M steps) stayed on. Three runs were relaunched by hand from checkpoints self-play had not promoted: 90M (the fact sheet labels it an owner manual promotion), 100M and 130M (labelled manual, actor not recorded). No owner quote exists for any of the three. 90M and 100M were relaunched before their panels ran; only 130M was relaunched after its panel. Each relaunch loaded model weights only, which reset the optimizer and reran about 50 warm-up iterations. Self-play and the panel disagreed at 60M and 120M. Agent-proposed, not owner-adopted: check each promotion on the panel before choosing the next start. Selection panel, not held-out qualification."
+description: "Owner decision for the final sprint (2026-09-30): \"let anchors speak will be good\", given on the learning rate. Keep Muon 1e-4 (AdamW 5e-6); per the sprint fact sheet, change it only if the anchor panel stalls and KL and clip fraction shrink. It never changed. The trainer's self-play promotion (>= 0.70 vs last_best every 10M steps) stayed on. Three runs were relaunched by hand from checkpoints self-play had not promoted: 90M, 100M and 130M, each on the owner's verbatim order (quoted in the body). 90M and 100M were relaunched before their panels ran; only 130M was relaunched after its panel. Each relaunch loaded model weights only, which reset the optimizer and reran about 50 warm-up iterations. Self-play and the panel disagreed at 60M and 120M. Agent-proposed, not owner-adopted: check each promotion on the panel before choosing the next start. Selection panel, not held-out qualification."
 tags: ["kaggriculture-v3", "decisions", "training", "evaluation"]
 status: "adopted"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
-decider: "Owner, 2026-09-30 (Claude Code session), on the learning rate: \"let anchors speak will be good\". Only this LR hold is owner-adopted. The manual relaunches are recorded as facts (90M labelled an owner promotion in the sprint fact sheet; 100M and 130M with no recorded actor), with no owner quote. The general rule of checking promotions on the panel is agent-proposed."
+decider: "Owner, 2026-09-30 (Claude Code session), on the learning rate: \"let anchors speak will be good\". Only this LR hold is owner-adopted. The manual relaunches from 90M, 100M and 130M were owner-directed (verbatim orders quoted in the body). The general rule of checking promotions on the panel is agent-proposed."
 sources:
+  - resource: "user-directive:2026-09-30:relaunch-from-90m-100m-130m"
   - resource: "user-directive:2026-09-30:let-anchors-speak-will-be-good"
   - resource: "repository:ops/sprint-2026-09-30/sprint-facts.md"
   - resource: "repository:ops/sprint-2026-09-30/README.md"
@@ -51,9 +52,15 @@ On the learning rate during the final sprint, the owner said, verbatim (Claude C
 
 This Decision was first titled "Promote and relaunch on anchor-panel evidence", which presented a general promotion rule as owner-adopted. It was retitled on 2026-10-01. The owner's quote was about the learning rate, and the rest is recorded below as facts or as the agent's proposal.
 
-## Manual relaunches (recorded facts, no owner quote)
+## Manual relaunches (owner-directed)
 
-Three runs were started by hand from checkpoints that self-play had not promoted. Each one meant stopping the running job and relaunching from that checkpoint.
+Three runs were started by hand from checkpoints that self-play had not promoted. Each one meant stopping the running job and relaunching from that checkpoint. The owner directed each relaunch in the Claude Code session of 2026-09-30 (verbatim):
+
+- 90M: "it's ok let's pull 90m to local, and we promote it, start a run with 90M, then eval with 90M."
+- 100M: "is ok, still same treatment to 90m will be good. Pull that locally, rellaunch with 100m, run anchors. no need submit."
+- 130M (after its panel): "now let's promote it and rrestart the run with 130m with a new run"
+
+The 90M and 100M orders asked for the panel to run *after* the relaunch, so those two were owner calls made on self-play margins (+2.7k and +2.5k vs last_best) rather than on panel evidence.
 
 | Start | Fact-sheet label | Previous run stopped | Relaunch | Panel of the start |
 | --- | --- | --- | --- | --- |
@@ -61,7 +68,7 @@ Three runs were started by hand from checkpoints that self-play had not promoted
 | 100M `8e520566` | "(manual)", no actor | 19:46:02Z | 19:46:23Z | started 19:46:35Z, after the relaunch |
 | 130M `86df0ee4` | "(manual)", no actor | 21:03:45Z | 21:03:58Z | finished about 21:02Z, before the relaunch |
 
-So the panel could not have chosen the 90M or 100M relaunch, and the trigger for those two is not recorded. Only the 130M relaunch followed its own panel. All times are UTC. The stop and launch times are from `h200-run-receipts/<run>/receipts/times.txt` and `watchdog.log`, and the panel times are from `anchor-games/cpu-pod/eval-{90M,100M,130M}.log`.
+So the panel could not have chosen the 90M or 100M relaunch; those followed the owner's orders above on self-play margins. Only the 130M relaunch followed its own panel. All times are UTC. The stop and launch times are from `h200-run-receipts/<run>/receipts/times.txt` and `watchdog.log`, and the panel times are from `anchor-games/cpu-pod/eval-{90M,100M,130M}.log`.
 
 ## Agent-proposed rule (not owner-adopted)
 

@@ -115,7 +115,7 @@ The [[../episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-an
 | Measure | Result |
 | --- | --- |
 | Trainer promotions | 70M (0.80), 80M (0.95), 140M (0.70), 170M (0.80), 180M (0.90) |
-| Manual relaunch starts | 90M (labelled an owner promotion), 100M and 130M (actor not recorded), after self-play scores of 0.60–0.65; no owner quote |
+| Manual relaunch starts | 90M, 100M and 130M, owner-directed (quotes in the LR Decision), after self-play scores of 0.60–0.65 |
 | Fixed-shop panel W-L (48 games) | c50 6-42 → 80M 30-18 → 90M 38-10 → 130M 46-2 → 170M, 180M, 200M, 210M 48-0 |
 | Fixed-shop panel mean margin | −7.2k → +7.5k at 210M |
 
