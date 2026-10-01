@@ -1,5 +1,16 @@
 # Final-sprint facts (2026-09-30 15:30Z – 23:59Z), for cookbook recording
 
+## Corrections (2026-10-01, after a review against the evidence)
+
+The original text below is kept as written. Where it conflicts with this list, this list wins.
+
+1. **Custody.** "its last run's training log/receipts not archived" is wrong. The Mac copy-off loop brought the r4zqqs49 log (14,256,784 B; 1,008 iteration records; last rank-0 iteration 705; ends with the SIGTERM) and its 15 receipts (including `stop.txt`) to `/Users/poonszesen/kg-v3-runs/earn720-r30e01w30-8xh200-from-130M-sps-20261001/`. The receipts of all four 8x H200 runs are now in `h200-run-receipts/`; the logs are hashed in `MANIFEST-skipped.tsv`.
+2. **Promotion timing.** The 90M and 100M relaunches came before their panels ran. The from-90M launch was at 19:12:25Z, and the 90M panel ran from 19:12:57Z to about 19:18:57Z (`anchor-games/cpu-pod/eval-90M.log`). The from-100M launch was at 19:46:23Z, and the 100M panel started at 19:46:35Z (`eval-100M.log`). Only the 130M relaunch (21:03:58Z) followed its panel, which finished at about 21:02Z (`eval-130M.log`). Launch times: `h200-run-receipts/<run>/receipts/times.txt`.
+3. **Who promoted.** Only 90M is labelled "owner manual promotion" here. 100M and 130M are labelled "(manual)" with no actor. No verbatim owner quote is recorded for any of the three.
+4. **Sampling flips.** "0.6% token flips" counts rows, not tokens: 15 of 2,400 rows (0.625%) had any token mismatch (`throughput/parity-gpu/results.json`, `sampling_identical_noise`).
+5. **Parity files.** The compiled-vs-eager numbers (max .100, implied ratio, values, gradients 1–9%, start-of-update ratio, clipfrac, stored-vs-replay max .67, sampling) come from `throughput/parity-gpu/results.json` (seed 4242). The fp64 floor, the eager-vs-fp64 gradient error and the stored-vs-replay max .37 come from `results2.json` (seed 4243). "Files: scratchpad/parity-gpu/" now means `throughput/parity-gpu/`.
+6. **Diagnostic arm order.** First-update approx_kl / clipfrac "(A/B/C/D)" are off .00186/.0087, all Python switches .00181/.0082, native + all switches .00184/.0083 and native only .00181/.0080. Native + compile_actor_heads only was .00183/.0089. The native-only approx_kl is 0.0018148, so it rounds to .00181, not .00182 (`throughput/sps-diag-evidence/sps-diag-*-20261001.log`, iteration-1 `[nt-probe]` record).
+
 All times UTC. "Panel" = fixed-shop anchor panel: 8 seeds (93001–93008) x 2 seats x 3 anchors (smaller_market_shock, cha22, v56) = 48 games, rule 1 on unless said, paired by (anchor, seed, seat); SE over the 8 seed means. Selection panel, not held-out.
 
 ## Reward / recipe (owner decisions, verbatim where known)

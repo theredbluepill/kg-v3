@@ -38,7 +38,7 @@ sources:
   - resource: "wandb-run:spoon/kg-v3/bqtke7iq"
   - resource: "wandb-run:spoon/kg-v3/hz4bpjnq"
   - resource: "wandb-run:spoon/kg-v3/r350xr3w"
-  - resource: "repository:cookbook/references/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel.md"
+  - resource: "repository:cookbook/episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel.md"
   - resource: "repository:ops/sprint-2026-09-30/sprint-facts.md"
   - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnC/launch.md"
   - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnF/launch.md"
@@ -107,7 +107,7 @@ Paired on the same games, f610's margin beat BC's in 32/32 games and fc6b's in 2
 
 ## Continuation through 210M (final sprint, 2026-09-30)
 
-The [[the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|final-sprint episode]] continued the same window from c50 for 160M more env steps. It kept the 720-step horizon, λ 1.0, one segment per minibatch and Muon 1e-4.
+The [[../episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|final-sprint episode]] continued the same window from c50 for 160M more env steps. It kept the 720-step horizon, λ 1.0, one segment per minibatch and Muon 1e-4.
 
 - **The reward changed.** It was own bank 0.30, cash difference 0.30, per-event econ shaping 0.01 (cap 0.1) and win/loss 0.30, set by the owner in `earnF/launch.md`.
 - **The batch grew.** From 60M the runs used 20 envs per rank on 8x H200.
@@ -115,7 +115,7 @@ The [[the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|f
 | Measure | Result |
 | --- | --- |
 | Trainer promotions | 70M (0.80), 80M (0.95), 140M (0.70), 170M (0.80), 180M (0.90) |
-| Owner promotions | 90M, 100M, 130M, after self-play scores of 0.60–0.65 |
+| Manual relaunch starts | 90M (labelled an owner promotion), 100M and 130M (actor not recorded), after self-play scores of 0.60–0.65; no owner quote |
 | Fixed-shop panel W-L (48 games) | c50 6-42 → 80M 30-18 → 90M 38-10 → 130M 46-2 → 170M, 180M, 200M, 210M 48-0 |
 | Fixed-shop panel mean margin | −7.2k → +7.5k at 210M |
 

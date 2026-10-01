@@ -13,7 +13,7 @@ sources: [{"resource": "user-directive:2026-09-29:ensure-the-compiler-crash-neve
 
 ## Decider and scope of the decision
 
-The owner asked, after the compiled-GEMM crash ([[compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]):
+The owner asked, after the compiled-GEMM crash ([[../references/compiled-gemm-template-overflows-above-2-21-rows|compiled-GEMM Reference]]):
 
 > Also can we ensure under any circumstance, the CUDA crash we faced earlier on the compiler issue will never be met in our v3?
 

@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Clock keepers, the native parallel step and compiled heads lifted H200 rollout throughput"
-description: "Final-sprint throughput finding, 2026-09-30, 8x H200 pod (driver 570.211.01, 96 vCPU, cgroup quota 81.6 CPU), 720-turn recipe at 20 envs/rank. Baseline ~3,650 env steps/s. The host ran intel_cpufreq passive + schedutil, and rayon env workers sampled at a median 800 MHz against 3.2 GHz on the main thread; one SCHED_IDLE busy loop per CPU (clock_keeper.sh) gave ~5,250 env steps/s (iteration 31.8 s -> 21.9 s) with no code change, while spinning only 56 of the CPUs was worse. On a 1x H200 diagnostic (single rank, keepers on), median env steps/s over iterations 2-7 was 840 baseline, 929 with all four Python switches, 1,034 with the native parallel step, 1,263 with native + compile_actor_heads and 1,268 with native + all switches. Live with 17b3068d + rl.compile_actor_heads=true: ~8,290-8,310 env steps/s (iteration 13.9 s), KL/clipfrac/teacher-KL/EV curves matching the old code. Compiled heads match eager within the eager-vs-fp64 floor. A pre-existing finding: bf16 trunk logp depends on batch shape (40-row rollout vs 1,440-row replay), giving start-of-update ratios 0.51-1.36 and 0.5-1.1% clip fraction before any optimizer step. One pod, one recipe; no Nsight capture."
+description: "Final-sprint throughput finding, 2026-09-30, 8x H200 pod (driver 570.211.01, 96 vCPU, cgroup quota 81.6 CPU), 720-turn recipe at 20 envs/rank. Baseline ~3,650 env steps/s. The host ran intel_cpufreq passive + schedutil, and rayon env workers sampled at a median 800 MHz against 3.2 GHz on the main thread; one SCHED_IDLE busy loop per CPU (clock_keeper.sh) gave ~5,250 env steps/s (iteration 31.8 s -> 21.9 s) with no code change, while spinning only 56 of the CPUs was worse. On a 1x H200 diagnostic (single rank, keepers on), median env steps/s over iterations 2-7 was 840 baseline, 929 with all four Python switches, 1,034 with the native parallel step, 1,263 with native + compile_actor_heads and 1,268 with native + all switches. Live with 17b3068d + rl.compile_actor_heads=true: ~8,290-8,310 env steps/s (iteration 13.9 s), KL/clipfrac/teacher-KL/EV curves matching the old code. Compiled-vs-eager head logp differences match the eager-vs-fp64 floor at the median (0.0057) but exceed it in the tail (p99.9 0.070 vs 0.053, max 0.100 vs 0.068); compiled-vs-fp64 (p99.9 0.053, max 0.082) is comparable to eager-vs-fp64 (p99.9 0.053, max 0.068). A pre-existing finding: bf16 trunk logp depends on batch shape (40-row rollout vs 1,440-row replay), giving start-of-update ratios 0.51-1.36 and 0.5-1.1% clip fraction before any optimizer step. One pod, one recipe; no Nsight capture."
 tags: ["kaggriculture-v3", "throughput", "finding", "rollout", "compile"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -20,6 +20,8 @@ sources:
   - resource: "repository:ops/sprint-2026-09-30/throughput/sps-diag-evidence/sps-diag-native-actor-20261001.log"
   - resource: "repository:ops/sprint-2026-09-30/throughput/sps-diag-evidence/bench-keeper-native.json"
   - resource: "repository:ops/sprint-2026-09-30/throughput/sps-diag-evidence/bench-nokeeper-native.json"
+  - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/gpu_head_parity.py"
+  - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/results.json"
   - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/gpu_head_parity2.py"
   - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/results2.json"
   - resource: "repository:ops/sps-2026-10-01/report.md"
@@ -73,27 +75,33 @@ These are the [[native-game-semantics-use-v3-owned-buffers|native parallel step]
 
 - **Profile before the change.** py-spy was blocked by `ptrace_scope` and the missing CAP_SYS_PTRACE, so the profile used the run's own `[nt-probe]` timers and `/proc` sampling. It showed serial Rust work on the main thread: the ObsStaging publish memcpy, grammar decode and serde_json, Game clones and a 5.6 MB staging allocation per step. It also showed about 600 eager ops per forward in the actor heads, and 6 host-device syncs per step, with nothing overlapping. No Nsight capture was taken.
 - **Review.** Four Claude reviewers and Codex reviewed the change. The verdict was GO WITH CONDITIONS, with no confirmed blocker. The conditions are listed in the rollout-optimization Reference.
-- **Live behaviour.** On 8x H200, the approx-KL, clip fraction, teacher KL and explained-variance curves matched the old-code run iteration by iteration. Each rank compiled 5 shapes. The first-update approx-KL and clip fraction of the four diagnostic arms were 0.00186/0.00181/0.00184/0.00182 and 0.0087/0.0082/0.0083/0.0080.
+- **Live behaviour.** On 8x H200, the approx-KL, clip fraction, teacher KL and explained-variance curves matched the old-code run iteration by iteration. Each rank compiled 5 shapes. On the 1x H200 diagnostic, the first-update approx-KL and clip fraction of the five arms (the iteration-1 `[nt-probe]` record of each archived log) were:
+  - baseline: 0.00186 and 0.0087;
+  - all four Python switches: 0.00181 and 0.0082;
+  - native + all four switches: 0.00184 and 0.0083;
+  - native only: 0.00181 and 0.0080;
+  - native + `compile_actor_heads` only: 0.00183 and 0.0089.
 
 ## Compiled-head GPU parity
 
-The test ran on 1x H200 (driver 570.211.01) with the 110M weights in bf16, 20 envs x 720 steps (`throughput/parity-gpu/`).
+The test ran on 1x H200 (driver 570.211.01) with the 110M weights in bf16, 20 envs x 720 steps. There were two runs in `throughput/parity-gpu/`. `results.json` (seed 4242, `gpu_head_parity.py`) holds compiled vs eager, values, gradients, the start-of-update ratio and sampling. `results2.json` (seed 4243, `gpu_head_parity2.py`) adds fp64 heads as a reference.
 
-- **Log-probabilities.** Compiled vs eager heads, per player: median 0.0057, p99.9 0.070, max 0.100 nats. The eager vs fp64 floor is 0.0057/0.053/0.068. The mean signed bias is +2e-5, and the implied ratio is 0.91–1.105 (mean 1.0001).
-- **Values** are bitwise identical.
-- **Gradients.** Relative error 1–9%, cosine ≥ 0.996. The eager vs fp64 error is 6–9.5%.
-- **Sampling.** With identical noise, 0.6% of tokens flip.
+- **Log-probabilities.** Compiled vs eager heads, per player (`results.json`): median 0.0057, p99.9 0.070, max 0.100 nats. The mean signed bias is +2e-5, and the implied ratio is 0.91–1.105 (mean 1.0001).
+- **Against the fp64 floor** (`results2.json`). Eager vs fp64 heads is 0.0057/0.053/0.068 (median/p99.9/max). So compiled vs eager matches the floor only at the median, and its tail is larger. What the data do support is that compiled vs fp64 (0.0057/0.053/0.082) is comparable to eager vs fp64: each implementation is about as far from fp64 as the other.
+- **Values** are bitwise identical (`results.json`).
+- **Gradients.** Compiled vs eager: global relative error 1–9%, cosine ≥ 0.996 (`results.json`). Eager vs fp64: 6–9.5% (`results2.json`).
+- **Sampling.** With identical noise, 15 of 2,400 rows (0.625%) had at least one token that differed (`results.json`, `sampling_identical_noise`). This counts rows, not tokens.
 - **Path.** Rollout and update both run `_policy_chunk` → `_compiled_actor_core` (`python/owl/model/kaggriculture.py`).
 
 ## Pre-existing finding: bf16 trunk numerics depend on batch shape
 
-This does not come from the speed-ups. The rollout runs the trunk on 40 rows, and the update replays the same data on 1,440 rows. In bf16, the stored rollout logp and the replayed logp then differ: median 0.021, p99.9 0.23, max 0.37–0.67 nats. At the start of an update, before any optimizer step, the ratio spans 0.51–1.36 (mean 0.9999), and the clip fraction is already 0.5–1.1%.
+This does not come from the speed-ups. The rollout runs the trunk on 40 rows, and the update replays the same data on 1,440 rows. In bf16, the stored rollout logp and the replayed logp then differ: median 0.021, p99.9 0.23, max 0.67 nats in `results.json` and 0.37 in `results2.json`. At the start of an update, before any optimizer step, the ratio spans 0.51–1.36 (mean 0.9999), and the clip fraction is already 0.5–1.1% (both `results.json`).
 
 So part of PPO's measured clip fraction and KL is numerical, not policy change. The [[ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|replay-drift alarm]] reads a signed mean log-ratio. Here the mean ratio was 0.9999, and how this spread interacts with that alarm was not measured. No repair was tried.
 
 ## Limits
 
-- **Scope.** One 8x H200 pod and one recipe. The live 8,300 figure comes from the sprint fact sheet and W&B (`dxhey4da`, `r4zqqs49`). The `r4zqqs49` training log was lost with the pod.
+- **Scope.** One 8x H200 pod and one recipe. The live 8,300 figure comes from the sprint fact sheet and W&B (`dxhey4da`, `r4zqqs49`). The `r4zqqs49` training log was copied to the Mac before the pod was terminated (hashed in `ops/sprint-2026-09-30/MANIFEST-skipped.tsv`), but this note did not re-derive the live figure from it.
 - **Not separated in the live run.** The live run turned on the keepers and the code at different times, so the code gain on 8 ranks is not separated from run-to-run drift.
 - **Hardware specific.** The clock-keeper effect depends on this host's governor and cgroup quota. Check both on any new pod before using it.
 - **Measures.** Throughput is env steps/s at an unchanged per-update batch, not learner turns per full update at a different batch. Nsight Systems was not used; no timeline claim is made.
@@ -101,4 +109,4 @@ So part of PPO's measured clip fraction and KL is numerical, not policy change. 
 
 ## Promotion basis
 
-The independent check is the re-derivation of the diagnostic medians from the archived logs. The live figures are the fact sheet's. Existing concepts searched: the rollout-optimization and native References (both left H200 unmeasured), the [[model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]], the [[../decisions/throughput-means-correct-complete-work|throughput Decision]] and the replay-drift alarm. The consequence: any new pod should check its CPU governor first, and the speed-up switches have H200 evidence. Results are in the [[the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|sprint episode]].
+The independent check is the re-derivation of the diagnostic medians from the archived logs. The live figures are the fact sheet's. Existing concepts searched: the rollout-optimization and native References (both left H200 unmeasured), the [[model-only-sps-ceiling-bounds-per-rank-throughput|model-only SPS ceiling]], the [[../decisions/throughput-means-correct-complete-work|throughput Decision]] and the replay-drift alarm. The consequence: any new pod should check its CPU governor first, and the speed-up switches have H200 evidence. Results are in the [[../episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|sprint episode]].

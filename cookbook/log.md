@@ -1,16 +1,48 @@
 # Change log
 
+## 2026-10-01 — Correct the final-sprint records against the evidence
+
+A review of the sprint record (commit `d916bbdc`) checked its claims against `ops/` and the Mac run folders. This entry corrects what it found, and it supersedes the matching claims in the entry below.
+
+- **Custody (corrected).** The `r4zqqs49` training log and receipts were not lost. The copy-off loop brought them to the Mac: 14,256,784 B, 1,008 iteration records to rank-0 iteration 705, ending at the SIGTERM; `stop.txt` at 23:51:10Z; a last copy pass at 23:51:28–23:52:34Z. The same holds for all four 8x H200 runs.
+  - Added `ops/sprint-2026-09-30/h200-run-receipts/`: receipts, watchdog and copy-off logs of all four runs, with the pod IP redacted.
+  - The four training logs and the `nvsmi_*.csv` samples are hashed in `MANIFEST-skipped.tsv`.
+  - The 80M package receipt was missing only from `ops/`. It was copied from the Mac build folder into `games-fixedshop-linux/80M-ft-on/package/`.
+  - `ops/sprint-2026-09-30/README.md` and a corrections list at the top of `sprint-facts.md` record this. The original fact-sheet text is kept below that list.
+- **Owner attribution (corrected).** The [[decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|LR-hold Decision]] was "Promote and relaunch on anchor-panel evidence". It is retitled, because the only owner quote, "let anchors speak will be good", was about the learning rate.
+  - Only the LR hold is owner-adopted.
+  - The manual relaunches are recorded as facts. The fact sheet labels 90M an owner promotion and gives no actor for 100M or 130M, and no relaunch has an owner quote.
+  - Checking promotions on the panel is marked agent-proposed.
+  - The same fix is in the [[references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|credit-window Reference]] and the episode.
+- **Promotion timing (corrected).** 90M and 100M were relaunched (19:12:25Z, 19:46:23Z) before their panels ran (from 19:12:57Z, 19:46:35Z). Only 130M (21:03:58Z) followed its panel (finished at about 21:02Z). The [[decisions/the-kaggriculture-v3-board|board]] no longer says the panel chose the manual promotions. Board length: 11,911 UTF-16 units.
+- **GPU parity (corrected).** In the [[references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput]] and [[references/rollout-optimizations-preserve-sampling-behind-default-off-switches|rollout-switch]] References, compiled-vs-eager logp now matches the eager-vs-fp64 floor only at the median. The tail exceeds it: p99.9 0.070 vs 0.053, max 0.100 vs 0.068. Compiled-vs-fp64 is comparable to eager-vs-fp64.
+  - Most of the numbers come from `parity-gpu/results.json` (seed 4242, `gpu_head_parity.py`), which is now cited, along with the [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|replay-drift]] Reference. `results2.json` is cited only for the fp64 comparison.
+  - The sampling flips are 15 of 2,400 rows (0.625%), not "0.6% of tokens".
+- **Diagnostic arms (corrected).** First-update KL and clip fraction are now listed for all five named arms. The native-only approx-KL is 0.00181, not 0.00182.
+- **Packaging (corrected).** In the [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]], 60M ran the 720-turn episode instead of the 40-turn one, not as well as it. The 80M receipt is now archived. `generated.at` is 2026-10-01.
+- **Episode.** The batch line now says the owner accepted only that 8 GPUs change the batch ("is ok for 1:1"). No owner agreement to 20 envs per rank was found. The episode also now cites `earnD/launch.md`.
+- **Moved.** The episode is now in the new [[episodes/index|Episodes]] folder, the first note of type Episode. Links were updated in the root, references and episodes indexes, the board, the throughput and credit-window References, and the two link targets in the entry below.
+- **Small fixes.**
+  - The [[decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|submission Decision]] notes that its directive dates are local (+08) and its submission times are UTC.
+  - The [[decisions/kaggriculture-compiles-gemms-with-cublas-only|GEMM Decision]] links the compiled-GEMM Reference by path.
+- **Checks.**
+  - Hook-mode `.claude/hooks/cookbook-lint.mjs` on every changed concept note.
+  - Every `repository:` source resolves in the tree.
+  - The `--staged-sources --require-log` pre-commit hook.
+  - `scripts/check_doc_freshness.py` printed "No doc updates required" (rc 0) on this change. The entry below named that check without a result, and it was not re-run on `d916bbdc`.
+- **Left open.** Some backtick paths in the [[references/native-game-semantics-use-v3-owned-buffers|native Reference]] (`src/kaggriculture.rs`, `ops/gpu-sps-2026-09-29/...`) do not exist; they predate the sprint and are unchanged. `ops/sps-2026-10-01/benchmark-preliminary.log.gz` (989 B) is the only binary among the new ops files.
+
 ## 2026-10-01 — Record the final sprint: result episode, owner Decisions, throughput finding and the re-dated board
 
 The owner asked, verbatim: "please record pending knowledge into the cookbook after eval is done". Earlier: "直接關掉吧，不過類似東西在結束後，我們總結進cookbook." ("just shut it down, but after it ends, summarize things like this into the cookbook").
 
-- **Added: the result episode.** [[references/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|Final-sprint episode]], closed.
+- **Added: the result episode.** [[episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|Final-sprint episode]], closed.
   - Recipe 0.30/0.30/0.01/0.30, 720-turn λ 1, Muon 1e-4.
   - Five W&B runs from c50 to 210M, with promotions and checkpoint shas.
   - The 48-game fixed-shop panel trajectory: 6-42 (−7.2k) → 48-0 (+7.51k), with paired deltas.
   - The three owner-agreed submissions and custody.
 - **Added: three owner Decisions, each quoting the owner.**
-  - [[decisions/promote-and-relaunch-on-anchor-panel-evidence|Anchor-panel promotion]] ("let anchors speak will be good"). The owner hand-promoted 90M, 100M and 130M. The LR stayed at 1e-4. Self-play and the panel disagreed at 60M and 120M.
+  - [[decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|Anchor-panel promotion]] ("let anchors speak will be good"). The owner hand-promoted 90M, 100M and 130M. The LR stayed at 1e-4. Self-play and the panel disagreed at 60M and 120M.
   - [[decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|Submission slots]] ("do not spend submission slot unless we agreed tgt."). Four submissions, 08bc, 90M, 170M and 210M, each with its own quote; 60M was not submitted.
   - [[decisions/keep-the-sprint-in-pure-self-play-without-pfsp-or-lambda-scheduling|Pure self-play]]. The owner declined the PFSP league and λ scheduling; both remain untested future options.
 - **Added: the throughput finding.** [[references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput Reference]].

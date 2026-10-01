@@ -44,4 +44,4 @@ All five sprint runs, from c50 to 210M, used:
 Neither option was run, so the sprint gives no evidence for or against either one.
 
 - **PFSP.** It would be consistent with the [[the-policy-is-stateless-and-observation-only|stateless policy constraints]] only if the opponent pool is a collection mix that never conditions the actor, critic, losses, rewards, normalization or checkpoint selection on opponent identity.
-- **Reopening.** Either option comes back only by an owner decision. One example would be when self-play and the anchor panel stop improving together. The sprint's panel gains through 200M give no such signal ([[promote-and-relaunch-on-anchor-panel-evidence|promotion Decision]]).
+- **Reopening.** Either option comes back only by an owner decision. One example would be when self-play and the anchor panel stop improving together. The sprint's panel gains through 200M give no such signal ([[hold-the-learning-rate-and-let-the-anchor-panel-speak|LR-hold Decision]]).

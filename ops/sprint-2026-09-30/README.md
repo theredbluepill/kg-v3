@@ -26,9 +26,10 @@ files.
 | `anchor-games/cpu-pod/parity/linux-vs-mac-replays.jsonl` | Linux-pod vs Mac anchor replay parity result | same |
 | `anchor-games/eval-60M/`, `eval-70M/`, `eval-80M/` | Mac fast-path panels: scripts, per-game JSONL, summaries, tables, the rule-off derivation and its 60M validation, spot checks | `anchor-games/eval-*` |
 | `anchor-games/endgame/` | Rule 1 / rule 2 A/B scripts and tables (`ab.py`, `cf.py`, `tables.md`, `ab_rule2_tables.md`); `kaggle/ids.txt` lists the ladder episodes whose replays were analysed | `anchor-games/endgame/` |
-| `anchor-games/games-fixedshop-linux/<ckpt>-ft-on/` | Linux CPU-pod panels for 60M–210M (rule 1 on): `summary.{json,md}`, `eval.json`, `run.log`, `package/{build,verify,manifest}.json` + `PACKAGE.md`, and 48 per-game `receipts/*.json` (80M has only `run.log` and receipts) | `anchor-games/games-fixedshop-linux/` |
+| `anchor-games/games-fixedshop-linux/<ckpt>-ft-on/` | Linux CPU-pod panels for 60M–210M (rule 1 on): `summary.{json,md}`, `eval.json`, `run.log`, `package/{build,verify,manifest}.json` + `PACKAGE.md`, and 48 per-game `receipts/*.json` (80M's `package/` was added on 2026-10-01 from the Mac build folder `kg-v3-pkg60/artifacts/anchor-eval/80M-ft-on-ded916bd72c3/`, because the pod copy-back had failed with a broken pipe, `cpu-pod/eval-80M.log`) | `anchor-games/games-fixedshop-linux/` |
 | `anchor-games/games-fixedshop/<label>/` | Mac panels and earlier labels (bc, best-f610, candidate, c50, c50-ft-on, c50-r12-on, p3-60f2, p4, 60M, 60M-ft-on, 70M/80M arms): per-game `receipts/*.json`, rule 2 `blocks/*.json`, 70M `prerule/*.json` | `anchor-games/games-fixedshop/` |
 | `throughput/sps-diag-evidence/` | 1x H200 diagnostic: training-run logs for the diagnostic arms (`sps-diag-{off,on,native-off,native-on,native-actor}-20261001.log`), `/proc/stat` snapshots, keeper vs no-keeper token benchmarks, `sps_train.sh`, `summ.py`, `maturin-17b3068d.log` | session scratchpad |
+| `h200-run-receipts/<run>/` | The four 8x H200 runs (from 60M, 90M, 100M, 130M): launcher `receipts/` (`launch.txt`, `times.txt`, `stop.txt`, `env.txt`, `git_state.txt`, `hashes.sha256`, topology, idle snapshots), `watchdog.log`, `copyoff.log` (pod IP replaced with `<terminated-h200-pod-ip>`) and `checkpoints.SHA256SUMS`. The training logs (> 1 MB) and `nvsmi_*.csv` samples are hashed in the manifest. Added 2026-10-01. | `/Users/poonszesen/kg-v3-runs/<run>/` |
 | `throughput/parity-gpu/` | Compiled vs eager actor-head parity on 1x H200 (driver 570.211.01, 110M weights, bf16): `gpu_head_parity{,2}.py`, `results{,2}.json`, run logs | session scratchpad |
 
 The small files in the session's `sps-diag-pod-archive/` were byte-identical to
@@ -49,9 +50,21 @@ token tensors and native module are hashed in the manifest.
 - `ops/earn-money-2026-09-30/anchor-games/` — the earlier (bc, best-f610,
   candidate) anchor games and `results.md`.
 
-## Not archived
+## Custody of the 8x H200 runs
 
-The 8x H200 pod was terminated right after the final submission; the last run's
-(W&B `r4zqqs49`) training log and receipts were not copied off. Its metrics are
-in W&B, and checkpoints 140M–210M plus `last_best` are on the Mac under
-`/Users/poonszesen/kg-v3-runs/` with `SHA256SUMS`.
+Corrected 2026-10-01. An earlier version of this section said the last run's
+(W&B `r4zqqs49`) training log and receipts were not copied off. That was wrong.
+The Mac copy-off loop brought them to
+`/Users/poonszesen/kg-v3-runs/earn720-r30e01w30-8xh200-from-130M-sps-20261001/`
+before the pod was terminated:
+
+- The training log is 14,256,784 bytes and holds 1,008 iteration records.
+  Its last rank-0 iteration is 705, and it ends with the SIGTERM traceback.
+- `receipts/` holds 15 files. `stop.txt` reads `2026-09-30T23:51:10Z STOP ...
+  reason='owner: shut down H200 after final submission'`.
+- `copyoff.log` shows a final pass from 23:51:28Z to 23:52:34Z.
+
+The same holds for the other three 8x H200 runs. The receipts and small logs of
+all four are now in `h200-run-receipts/`. The training logs stay on the Mac,
+hashed in `MANIFEST-skipped.tsv`. Their checkpoints (70M–210M) plus `last_best`
+are on the Mac under `/Users/poonszesen/kg-v3-runs/` with `SHA256SUMS`.

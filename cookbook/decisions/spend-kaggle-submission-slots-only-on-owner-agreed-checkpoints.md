@@ -59,3 +59,4 @@ This sharpens the standing rule of the [[evaluation-preserves-generality-and-evi
 - **No ladder A/B.** The ladder does not separate checkpoint strength from rule 1.
 - **Panel limits.** The panels are selection evidence: three anchors and eight seeds, not held-out.
 - **210M order.** The 210M submission preceded its own panel, by the owner's choice at the deadline.
+- **Two time bases.** The directive ids and the `ops/submit-*-2026-10-01/` folder names carry 2026-10-01, which appears to be the local (+08) date. The submission times above are UTC on 2026-09-30.

@@ -1,0 +1,19 @@
+launch.sh 2026-09-30T17:07:49Z
+name=earn720-r30e01w30-8xh200-from-60M-20261001 gpus=8 n_envs=20 global_games_per_iteration=160 env_steps_per_iteration=115200
+optimizer_steps_per_iteration=20 (each over 8 game-segments, one per rank) numa=cpu eager=0
+checkpoint=/root/start/checkpoint_60M.pt repo=/root/kg-v3 pinned_source=07c8fc9972297f28e0414da752700194a90d4fc3 expected_preset_sha256=b7fa7f9d57363869546a076b20184d16fd97583c38c8541dbb8d5789e520fcae allow_recipe_drift=0
+run_dir=/root/runs/earn720-r30e01w30-8xh200-from-60M-20261001 log=/root/runs/earn720-r30e01w30-8xh200-from-60M-20261001.log watchdog_log=/root/runs/earn720-r30e01w30-8xh200-from-60M-20261001-watchdog.log receipts=/root/receipts/earn720-r30e01w30-8xh200-from-60M-20261001 frozen=/root/sprint/earn720-r30e01w30-8xh200-from-60M-20261001
+env: OMP_NUM_THREADS=1 WANDB_ENTITY=spoon KG_NT_NUMA=cpu KG_NT_NATIVE_THREADS=4 CUDA_DEVICE_ORDER=PCI_BUS_ID TORCHINDUCTOR_CACHE_DIR=/root/sweep-cache/inductor TRITON_CACHE_DIR=/root/sweep-cache/triton
+cmd (in /root/kg-v3): .venv/bin/torchrun --nproc-per-node 8 /root/sprint/earn720-r30e01w30-8xh200-from-60M-20261001/main_probe_auto.py scripts/run_ppo.py configs/kaggriculture_4rank_margin.yaml /root/runs/earn720-r30e01w30-8xh200-from-60M-20261001 --log-mode wandb --wandb-mode online --experiment-id earn720-r30e01w30-8xh200-from-60M-20261001 --load-model-weights /root/start/checkpoint_60M.pt --load-model-weights-mode model_only -o env.n_envs=20 rl.horizon=720 rl.segments_per_minibatch=1 rl.gae_lambda=1.0 env.reward_shaping.econ_bank_weight=0.3 env.reward_shaping.econ_bank_scale=150000 env.reward_shaping.econ_bank_cap=0.3 env.reward_shaping.econ_margin_weight=0.3 env.reward_shaping.econ_margin_scale=100000 env.reward_shaping.econ_margin_cap=0.3 env.reward_shaping.econ_shaping=0.01 env.reward_shaping.econ_cap=0.1
+kit=/root/sprint-kit head=b2276bc5b70073b58a27f9e5fbd52473dbd48569 preset_sha256=b7fa7f9d57363869546a076b20184d16fd97583c38c8541dbb8d5789e520fcae
+5807af36e8cbd8b04cecafdb0b33d27477628950b13b212bc403b1a411cbb05f  /root/sprint-kit/first_iters.py
+dffdeb7fe3de853ea376882d7cc23cd24bd7a7850bdd59e9c4cc3bb25cd174d2  /root/sprint-kit/main_probe_auto.py
+a8dbb74fbf5c322a5d56bb70f93c089948c3100be9aa51088717e13a11ca0575  /root/sprint-kit/watchdog.py
+89a3101095df3e6371e2e18fa94bd8ed2caf380c011132054b4e76fa0d784190  /root/sprint-kit/bootstrap.sh
+cbcde313d9cdd1f742415e07753a705fa3acb66d87a9075af9c471bd9f0d9218  /root/sprint-kit/launch.sh
+a59589429eff7b6369761ef60c5c06cb912489e125c624bbd167dc5cf0103899  /root/sprint-kit/stop.sh
+dffdeb7fe3de853ea376882d7cc23cd24bd7a7850bdd59e9c4cc3bb25cd174d2  /root/sprint/earn720-r30e01w30-8xh200-from-60M-20261001/main_probe_auto.py
+d9b6e9307db333acb6c529fee4ab4f8d8e67ca26ad43dc4986054061b15e998e  /root/sprint/earn720-r30e01w30-8xh200-from-60M-20261001/run.sh
+a8dbb74fbf5c322a5d56bb70f93c089948c3100be9aa51088717e13a11ca0575  /root/sprint/earn720-r30e01w30-8xh200-from-60M-20261001/watchdog.py
+pgid=26925 watchdog_pid=26959
+stop: bash /root/sprint-kit/stop.sh earn720-r30e01w30-8xh200-from-60M-20261001

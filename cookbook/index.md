@@ -20,9 +20,10 @@ The repository's cookbook records reusable decisions and knowledge across bounde
 - Phase tracker (working artifact, task state per phase): `ops/rebuild-2026-09-29/phase-status.md`
 
 - [[decisions/index|Decisions]]
+- [[episodes/index|Episodes]]
 - [[workflows/index|Workflows]]
 - [[log|Change log]]
 - Derived view: `cookbook/kaggriculture-v3.base` in the vault, linked to the repository's sibling Base.
 - Setup checks and source fingerprints: `ops/cookbook-setup-checks.md`.
 
-The single standing board is [[decisions/the-kaggriculture-v3-board|the Kaggriculture v3 board]] (first version 2026-09-30; position 2026-10-01, after the competition deadline). Read it in full before opening a training episode. The closing result is the [[references/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|final-sprint episode]]. No comparison register or empirical Lesson exists yet.
+The single standing board is [[decisions/the-kaggriculture-v3-board|the Kaggriculture v3 board]] (first version 2026-09-30; position 2026-10-01, after the competition deadline). Read it in full before opening a training episode. The closing result is the [[episodes/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|final-sprint episode]]. No comparison register or empirical Lesson exists yet.

@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Rollout optimizations preserve sampling behind default-off switches"
-description: "Four opt-in Python rollout switches compile grammar heads with eager RNG, build exact packing metadata from current CPU observation masks, reuse fenced pinned action buffers, and skip duplicate telemetry finite scans. Default CPU trainer and config digests match b2276bc5; CPU Inductor and transport tests pass. Final-sprint H200 evidence (2026-09-30): on a 1x H200 diagnostic all four switches gave +10.5% (929 vs 840 env steps/s) and native step + compile_actor_heads +50%; packing, pinned D2H and telemetry skip added nothing measurable and stayed off. compile_actor_heads with the native step ran live on 8x H200 (~8,300 env steps/s) with KL/clip curves matching old code; compiled vs eager heads match within the eager-vs-fp64 floor. Review: GO WITH CONDITIONS (8-variant recompile limit, config flag rejected by older code on resume, rank-0 first-eval compile under the NCCL timeout, test gaps)."
+description: "Four opt-in Python rollout switches compile grammar heads with eager RNG, build exact packing metadata from current CPU observation masks, reuse fenced pinned action buffers, and skip duplicate telemetry finite scans. Default CPU trainer and config digests match b2276bc5; CPU Inductor and transport tests pass. Final-sprint H200 evidence (2026-09-30): on a 1x H200 diagnostic all four switches gave +10.5% (929 vs 840 env steps/s) and native step + compile_actor_heads +50%; packing, pinned D2H and telemetry skip added nothing measurable and stayed off. compile_actor_heads with the native step ran live on 8x H200 (~8,300 env steps/s) with KL/clip curves matching old code. Compiled vs eager head logp matches the eager-vs-fp64 floor at the median (0.0057) but not in the tail (p99.9 0.070 vs 0.053, max 0.100 vs 0.068); compiled-vs-fp64 is comparable to eager-vs-fp64. Review: GO WITH CONDITIONS (8-variant recompile limit, config flag rejected by older code on resume, rank-0 first-eval compile under the NCCL timeout, test gaps)."
 tags: ["kaggriculture-v3", "adaptation", "throughput", "compile", "rollout"]
 status: "verified-scoped"
 generated: {"by": "openai/codex; sprint H200 section by anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -33,6 +33,8 @@ sources:
   - resource: "repository:docs/rl-api-specs.md"
   - resource: "repository:ops/sprint-2026-09-30/sprint-facts.md"
   - resource: "repository:ops/sprint-2026-09-30/throughput/sps-diag-evidence/summ.py"
+  - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/gpu_head_parity.py"
+  - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/results.json"
   - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/results2.json"
   - resource: "repository:cookbook/references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput.md"
   - resource: "external:https://github.com/Dao-AILab/flash-attention/blob/v2.8.3/csrc/flash_attn/src/block_info.h"
@@ -149,12 +151,16 @@ For these switches, the results are:
   at about 8,300 env steps/s (iteration 13.9 s), with 5 compiled shapes per
   rank. The approx-KL, clip fraction, teacher KL and explained-variance curves
   matched the old-code run iteration by iteration.
-- **GPU parity, compiled vs eager heads** (bf16, 110M weights):
+- **GPU parity, compiled vs eager heads** (bf16, 110M weights; `results.json`
+  unless noted):
   - per-player logp: median 0.0057, p99.9 0.070, max 0.100;
-  - the eager-vs-fp64 floor for comparison: 0.0057/0.053/0.068;
+  - the eager-vs-fp64 floor (`results2.json`): 0.0057/0.053/0.068, so the
+    compiled-vs-eager tail exceeds it; compiled vs fp64 (0.0057/0.053/0.082)
+    is comparable to eager vs fp64;
   - values: bitwise equal;
   - gradients: cosine ≥ 0.996;
-  - sampling with identical noise: 0.6% of tokens flip.
+  - sampling with identical noise: 15 of 2,400 rows (0.625%) had at least
+    one differing token (a row count, not a token count).
 - **Review conditions (GO WITH CONDITIONS, no confirmed blocker).**
   - The compiled heads use `fullgraph` with `dynamic=False` under an
     8-variant recompile limit that crashes when exceeded; production used 5.

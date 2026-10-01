@@ -1,7 +1,7 @@
 ---
 type: "Episode"
 title: "The final sprint took 720-turn self-play from c50 to a 48-0 anchor panel"
-description: "Closed result episode, 2026-09-30 15:30Z to 23:59Z UTC. One chained mirror self-play lineage (720-turn horizon, lambda 1, reward own bank 0.30 + cash difference 0.30 + per-event econ shaping 0.01 cap 0.1 + win/loss 0.30, Muon 1e-4) ran from the owner-promoted c50 (pcy5knet 50M) to 210M over five W&B runs (48gyi9m5, xuft2e2i, 3w2ag52m, dxhey4da, r4zqqs49). On the 48-game fixed-shop anchor panel (8 seeds x 2 seats x smaller_market_shock, cha22, v56; rule 1 on) W-L went c50 6-42 (-7.2k mean margin) -> 90M 38-10 (+1.94k) -> 170M 48-0 (+6.90k) -> 210M 48-0 (+7.51k). Self-play promotion and the panel disagreed at 60M and 120M. Throughput rose from ~2,210 (4x RTX PRO 6000) to ~8,300 env steps/s (8x H200, clock keepers, native parallel step, compiled heads). The owner submitted 90M, 170M and 210M (refs 56716929, 56720629, 56722061). Selection panel, one training seed; ladder ranks of the three submissions are not recorded; the last run's log and receipts were lost with the pod (metrics in W&B r4zqqs49)."
+description: "Closed result episode, 2026-09-30 15:30Z to 23:59Z UTC. One chained mirror self-play lineage (720-turn horizon, lambda 1, reward own bank 0.30 + cash difference 0.30 + per-event econ shaping 0.01 cap 0.1 + win/loss 0.30, Muon 1e-4) ran from the owner-promoted c50 (pcy5knet 50M) to 210M over five W&B runs (48gyi9m5, xuft2e2i, 3w2ag52m, dxhey4da, r4zqqs49). On the 48-game fixed-shop anchor panel (8 seeds x 2 seats x smaller_market_shock, cha22, v56; rule 1 on) W-L went c50 6-42 (-7.2k mean margin) -> 90M 38-10 (+1.94k) -> 170M 48-0 (+6.90k) -> 210M 48-0 (+7.51k). Self-play promotion and the panel disagreed at 60M and 120M. Throughput rose from ~2,210 (4x RTX PRO 6000) to ~8,300 env steps/s (8x H200, clock keepers, native parallel step, compiled heads). The owner submitted 90M, 170M and 210M (refs 56716929, 56720629, 56722061). Selection panel, one training seed; ladder ranks of the three submissions are not recorded. The four 8x H200 training logs are on the Mac (hashed), and their receipts are in ops/sprint-2026-09-30/h200-run-receipts/."
 tags: ["kaggriculture-v3", "episode", "training", "evaluation", "submission", "throughput"]
 status: "closed"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -28,8 +28,15 @@ sources:
   - resource: "repository:ops/sprint-2026-09-30/anchor-games/eval-60M/eval60m_tables.md"
   - resource: "repository:ops/sprint-2026-09-30/anchor-games/eval-70M/eval70m_tables.md"
   - resource: "repository:ops/sprint-2026-09-30/anchor-games/eval-80M/eval80m_tables.md"
+  - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/results.json"
   - resource: "repository:ops/sprint-2026-09-30/throughput/parity-gpu/results2.json"
+  - resource: "repository:ops/sprint-2026-09-30/h200-run-receipts/earn720-r30e01w30-8xh200-from-60M-20261001/receipts/launch.txt"
+  - resource: "repository:ops/sprint-2026-09-30/h200-run-receipts/earn720-r30e01w30-8xh200-from-90M-20261001/receipts/times.txt"
+  - resource: "repository:ops/sprint-2026-09-30/h200-run-receipts/earn720-r30e01w30-8xh200-from-100M-sps-20261001/receipts/times.txt"
+  - resource: "repository:ops/sprint-2026-09-30/h200-run-receipts/earn720-r30e01w30-8xh200-from-130M-sps-20261001/receipts/times.txt"
+  - resource: "repository:ops/sprint-2026-09-30/h200-run-receipts/earn720-r30e01w30-8xh200-from-130M-sps-20261001/receipts/stop.txt"
   - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnC/launch.md"
+  - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnD/launch.md"
   - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnE/launch.md"
   - resource: "repository:ops/rebuild-2026-09-29/pod4-2026-09-30/earnF/launch.md"
   - resource: "repository:ops/rebuild-2026-09-29/sprint-8gpu/launch.sh"
@@ -63,7 +70,7 @@ All times are UTC. The consolidated numbers are in `ops/sprint-2026-09-30/sprint
 - **Training.** `configs/kaggriculture_4rank_margin.yaml` with `rl.horizon=720 rl.segments_per_minibatch=1 rl.gae_lambda=1.0` (`sprint-8gpu/launch.sh`). Muon 1e-4 / AdamW 5e-6. Checkpoint every 10M env steps; promotion at ≥ 0.70 against last_best; teacher_mode last_best (KL 0.005).
 - **LR.** The owner said "let anchors speak will be good". The rule was to keep 1e-4 unless the anchors stalled and KL and clip fraction shrank. That never happened, so the LR was never changed.
 - **Lineage before the sprint.** pcy5knet promoted 60f2 at 30M and 08bc at 40M. Its 50M checkpoint (`0cc80065`, "c50") was not promoted (8/12), and the owner promoted it by hand (`earnC/launch.md`).
-- **Batch change.** The 8x H200 runs used 20 envs per rank, against 12 on 4 GPUs. The owner accepted the larger per-update batch (`mac_side.md`). Each manual promotion or relaunch loaded the model only (`model_only`), so it reset the optimizer and reran the ~1,000-step LR warm-up (~50 iterations).
+- **Batch change.** The 8x H200 runs used 20 envs per rank (`h200-run-receipts/<run>/receipts/launch.txt`), against 12 on 4 GPUs. The owner accepted that 8 GPUs change the per-update batch ("is ok for 1:1", `mac_side.md`). That acceptance was given for the kit's recipe of 12 envs per rank. `mac_side.md` says any change to `--n-envs` must be told to the owner, and no record of the owner agreeing to 20 envs per rank was found. Each manual relaunch or relaunch loaded the model only (`model_only`), so it reset the optimizer and reran the ~1,000-step LR warm-up (~50 iterations).
 
 ## Runs (W&B spoon/kg-v3)
 
@@ -71,11 +78,11 @@ All times are UTC. The consolidated numbers are in `ops/sprint-2026-09-30/sprint
 |---|---|---|---|---|
 | earn720-r30e01w30-from-c50-4rank-20260930 | 4x RTX PRO 6000 | c50 | 48gyi9m5 | 60M 0.50 (+1.6k), not promoted |
 | …-8xh200-from-60M-20261001 | 8x H200, driver 570.211.01 | 60M | xuft2e2i | 70M 0.80 promoted; 80M 0.95 promoted; 90M 0.60 |
-| …-from-90M-20261001 | 8x H200 | 90M (manual) | 3w2ag52m | 100M 0.65 |
+| …-from-90M-20261001 | 8x H200 | 90M (manual; labelled owner promotion) | 3w2ag52m | 100M 0.65 |
 | …-from-100M-sps-20261001 | 8x H200, code 17b3068d + compiled heads | 100M (manual) | dxhey4da | 110M 0.50, 120M 0.60, 130M 0.65 |
 | …-from-130M-sps-20261001 | same | 130M (manual) | r4zqqs49 | 140M 0.70 promoted, 150M 0.65, 160M 0.60, 170M 0.80 promoted, 180M 0.90 promoted, 190M 0.55, 200M 0.65, 210M 0.65; stopped 23:51 |
 
-Trainer promotions: 70M, 80M, 140M, 170M and 180M. The owner promoted 90M, 100M and 130M by hand.
+Trainer promotions: 70M, 80M, 140M, 170M and 180M. The 90M, 100M and 130M starts were manual relaunches. The fact sheet labels 90M an owner promotion and records no actor for 100M or 130M; no owner quote exists for any of them. The 90M and 100M relaunches (19:12:25 and 19:46:23) came before their panels ran (from 19:12:57 and 19:46:35). Only the 130M relaunch (21:03:58) followed its panel, which finished at about 21:02 ([[../decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|LR Decision]]).
 
 Checkpoint sha256 prefixes:
 
@@ -137,7 +144,7 @@ No paneled trainer-promoted checkpoint (70M, 80M, 170M, 180M) had a lower mean m
 | + one SCHED_IDLE clock keeper per CPU (`clock_keeper.sh`) | ~5,250 (iteration 31.8 s → 21.9 s) |
 | + native parallel step and `rl.compile_actor_heads=true` (17b3068d) | ~8,290–8,310 (iteration 13.9 s) |
 
-With the compiled heads, the KL, clip fraction, teacher KL and explained variance curves matched the old-code run iteration by iteration. The mechanisms and limits are in the [[clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput Reference]], and the evidence is in `ops/sprint-2026-09-30/throughput/` and `ops/sps-2026-10-01/`.
+With the compiled heads, the KL, clip fraction, teacher KL and explained variance curves matched the old-code run iteration by iteration. The mechanisms and limits are in the [[../references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput Reference]], and the evidence is in `ops/sprint-2026-09-30/throughput/` and `ops/sps-2026-10-01/`.
 
 ## Submissions (owner-approved each time)
 
@@ -163,15 +170,19 @@ Each package has rule 1 baked on, rule 2 off, and the clean native module. The r
 - Checkpoints 60M–210M and last_best are on the Mac under `/Users/poonszesen/kg-v3-runs/<run>/` with `SHA256SUMS`.
 - The 4x RTX pod archive is 8.5 GB, with 36 `.pt` files sha-verified.
 - The compact text evidence is in `ops/sprint-2026-09-30/`. Skipped bulk files are hashed in `MANIFEST-skipped.tsv`.
+- The four 8x H200 runs' training logs were copied off to the Mac before the pod was terminated. They are under `/Users/poonszesen/kg-v3-runs/<run>/` and hashed in `MANIFEST-skipped.tsv`. Their receipts, watchdog logs and copy-off logs are in `ops/sprint-2026-09-30/h200-run-receipts/`.
+- The last run (r4zqqs49) is included. Its log is 14,256,784 bytes, with 1,008 iteration records up to rank-0 iteration 705, and it ends with the SIGTERM. `stop.txt` records `2026-09-30T23:51:10Z STOP ... reason='owner: shut down H200 after final submission'`. The final copy-off pass ran from 23:51:28 to 23:52:34.
 
-**Lost:** the 8x H200 pod was terminated at the owner's request right after the final submission. Its last run's training log and receipts (r4zqqs49) were not copied off. Its metrics remain only in W&B r4zqqs49. All pods were terminated by 23:59.
+**Terminated:** the 8x H200 pod was terminated at the owner's request right after the final submission. All pods were terminated by 23:59.
+
+An earlier version of this episode said the r4zqqs49 log and receipts were lost. That was wrong. They were copied to the Mac; the receipts were added to `ops/` on 2026-10-01, and the log is hashed there.
 
 ## Gaps and limits
 
 - **One training seed, chained starts.** Each relaunch reset the optimizer, so gains mix more training with the starts.
 - **Selection panel, not held-out qualification.** It has 3 anchors and 8 seeds. 08bc was played rule off and the rest rule on; 60M's delta is from the rule-off arm.
-- **The fixed-shop engine is not the board's earlier harness.** Margins here do not compare directly with the earlier f610 −21.1k / −28.8k table in [[a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|the credit-window Reference]].
+- **The fixed-shop engine is not the board's earlier harness.** Margins here do not compare directly with the earlier f610 −21.1k / −28.8k table in [[../references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|the credit-window Reference]].
 - **Ladder results.** Kaggle scores and ranks for 90M, 170M and 210M are not recorded here.
 - **Attribution.** Reward, window, batch size and more steps changed together along the lineage. The panel gain is not attributed to any one of them.
 
-Related: [[../decisions/the-kaggriculture-v3-board|the v3 board]], the owner's sprint Decisions on [[../decisions/promote-and-relaunch-on-anchor-panel-evidence|anchor-panel promotion]], [[../decisions/keep-the-sprint-in-pure-self-play-without-pfsp-or-lambda-scheduling|pure self-play]] and [[../decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|submission slots]], [[clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput]], [[final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|rule 1]], [[late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|rule 2]], [[kaggle-packaging-reuses-the-starter-submission-path|Kaggle packaging]].
+Related: [[../decisions/the-kaggriculture-v3-board|the v3 board]], the owner's sprint Decisions on [[../decisions/hold-the-learning-rate-and-let-the-anchor-panel-speak|the LR hold]], [[../decisions/keep-the-sprint-in-pure-self-play-without-pfsp-or-lambda-scheduling|pure self-play]] and [[../decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|submission slots]], [[../references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput]], [[../references/final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|rule 1]], [[../references/late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|rule 2]], [[../references/kaggle-packaging-reuses-the-starter-submission-path|Kaggle packaging]].
