@@ -189,6 +189,23 @@ impl ObservationGame {
             .map_err(|error| engine_error("actions", error))
     }
 
+    pub fn stepped_with_market_metrics(
+        &self,
+        actions: &[serde_json::Value],
+    ) -> Result<(Self, StepMetrics), ObserveError> {
+        let (game, metrics) = self
+            .game
+            .stepped_with_market_metrics(actions)
+            .map_err(|error| engine_error("actions", error))?;
+        Ok((
+            Self {
+                game,
+                config: Arc::clone(&self.config),
+            },
+            metrics,
+        ))
+    }
+
     pub fn prepare(&self) -> Result<PreparedObservation, ObserveError> {
         let snapshot = self.acquire_snapshot();
         validate_snapshot(&snapshot, &self.config)?;

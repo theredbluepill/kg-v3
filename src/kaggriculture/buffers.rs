@@ -495,6 +495,10 @@ fn zip_exact<A: ExactSizeIterator, B: ExactSizeIterator>(a: A, b: B) -> std::ite
 }
 
 impl ValidatedObsBuffersMut<'_> {
+    pub fn n_envs(&self) -> usize {
+        self.n_envs
+    }
+
     pub fn envs_mut(&mut self) -> impl Iterator<Item = ObsEnvMut<'_>> {
         let group_0 = zip_exact(
             zip_exact(

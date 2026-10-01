@@ -493,10 +493,15 @@ Independently of manifest declarations, only `lib.rs`, `Cargo.toml`,
 must equal the reference minus the six-package Rayon closure, and the Task 1.1
 provenance appendix must follow the historical bytes with a pinned SHA-256.
 
-Only reference `lib.rs` lines 19, 21–25 and 27 are removed: declarations for
+The Task 1.1 trim removes reference `lib.rs` lines 19, 21–25 and 27: declarations for
 `ffi`, `joint_matching`, `myolie_features`, `myolie_sampler`, `native_agents`,
-`policy_rows` and `training`. The resulting file is 185,626 bytes, SHA-256
-`c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`.
+`policy_rows` and `training`. That historical trimmed file was 185,626 bytes,
+SHA-256 `c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd`.
+The 2026-10-01 native SPS refinement adds a narrowly pinned transactional
+`stepped_with_market_metrics(&self)` wrapper and delegates the existing mutating
+method to it. The rules body is unchanged; exact current bytes and edits are in
+`TRIM_MANIFEST.json`, with an independent expected replacement in the checker.
+`ops/sps-2026-10-01/` records baseline trajectory parity and Mac step timings.
 `py_random.rs`, `econ_attrib.rs` and the RNG integration tests retain exact
 reference bytes, as do the Apache-2.0 license and four compressed fixtures.
 Cargo removes the unused binary, cdylib target and Rayon dependency; its

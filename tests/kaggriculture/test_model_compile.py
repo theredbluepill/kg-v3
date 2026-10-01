@@ -297,7 +297,10 @@ def test_trainer_path_compile_sites_never_take_a_model() -> None:
         if (targets := _compile_targets(path))
     }
     assert found == {
-        "python/owl/model/kaggriculture.py": ["self._forward_transformer_trunk"],
+        "python/owl/model/kaggriculture.py": [
+            "self._forward_transformer_trunk",
+            "self.actor.policy_core",
+        ],
         "python/owl/model/stateless_transformer_v1.py": [
             "self._forward_transformer_trunk"
         ],

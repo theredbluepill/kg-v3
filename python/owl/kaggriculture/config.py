@@ -82,6 +82,9 @@ class KaggricultureEnvConfig(BaseConfig):
     reward_shaping: KaggricultureRewardConfig
     pin_memory: bool = True
     native_threads: int = Field(ge=1, strict=True)
+    # Native reward publication already rejects nonfinite banks. This optional
+    # telemetry-only shortcut retains shape/dtype checks and metric arithmetic.
+    skip_reward_telemetry_validation: bool = Field(default=False, strict=True)
     # None (the default) is pure mirror self-play, byte-identical to the
     # pre-mix trainer.
     opponent_mix: KaggricultureOpponentMixConfig | None = None
@@ -93,7 +96,7 @@ class KaggricultureEnvConfig(BaseConfig):
         return self
 
     @model_serializer(mode="wrap")
-    def _omit_absent_opponent_mix(
+    def _omit_disabled_extensions(
         self, handler: SerializerFunctionWrapHandler
     ) -> dict[str, Any]:
         # Self-play configs dump exactly as before the mix existed, so their
@@ -101,4 +104,6 @@ class KaggricultureEnvConfig(BaseConfig):
         data: dict[str, Any] = handler(self)
         if self.opponent_mix is None:
             del data["opponent_mix"]
+        if not self.skip_reward_telemetry_validation:
+            del data["skip_reward_telemetry_validation"]
         return data

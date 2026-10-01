@@ -40,12 +40,15 @@ class ProbedCompileStack:
 
 
 # The ATEN-only GEMM A/B (ops/rebuild-2026-09-29/results.md, "ATEN-only GEMM
-# A/B") ran on torch 2.9.0+cu128, triton 3.5.0 and NVIDIA driver 595.91.07.
-# Another version must repeat that A/B before it is added here.
+# A/B") ran on torch 2.9.0+cu128, triton 3.5.0 and NVIDIA driver 595.91.07
+# (RTX PRO 6000 Blackwell, sm_120). Its correctness half and template census
+# were repeated on driver 570.211.01 (H200, sm_90) with the same torch and
+# triton (ops/h200-driver-gate-2026-10-01/). Another version must repeat that
+# A/B before it is added here.
 KAGGRICULTURE_PROBED_COMPILE_STACK = ProbedCompileStack(
     torch="2.9.0",
     triton="3.5.0",
-    nvidia_drivers=("595.91.07",),
+    nvidia_drivers=("595.91.07", "570.211.01"),
 )
 
 

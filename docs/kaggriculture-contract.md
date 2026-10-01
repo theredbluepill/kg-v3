@@ -242,6 +242,7 @@ Wiring: player tokens are `player_tokens + player_feature_proj(player_features)`
 - **Buffer lifetime and transactions:**
   - Before the env overwrites any published buffer generation (observations, rewards, dones, banks, counters, metrics), every reader of it must have finished. A synchronous-copy baseline satisfies this; double buffering needs a per-buffer reuse fence.
   - A failed step or reset leaves game state, seed allocation, terminal records and published buffers unchanged.
+  - Native workers admit/decode each environment and advance one transactional game clone. Private observation staging is reused; workers clear all fields and padding before writing. Commit validates dimensions before parallel copies into disjoint caller slices and drops old games on workers. Caller buffer addresses, ordered seed reservation, GIL release and the entry fence are preserved.
   - Task 0.2 found that the historical CUDA fault was a compiler GEMM overflow, not buffer reuse; the fence is still required for correctness.
 
 ## Trainer seam (Task 3.1)

@@ -1,0 +1,932 @@
+{
+  "scope": "forward + within-turn decode + completed CPU action transfer; optional native step/H2D; no PPO update",
+  "device": "cpu",
+  "host": "macOS-26.4-arm64-arm-64bit",
+  "torch": "2.9.0",
+  "compile_stack": {
+    "torch": "2.9.0",
+    "triton": null,
+    "cuda_available": false,
+    "nvidia_drivers": null
+  },
+  "flash_attn_version": null,
+  "torch_cuda_version": null,
+  "native_binary_path": "/Users/poonszesen/kg-v3-h200gate/python/owl/rs.abi3.so",
+  "native_binary_sha256": "698eabb6d6fbc88c8e4fa1882e0bfffbd7d4637161f6bfdf8d0bd5ba0ca9f337",
+  "threads": 2,
+  "seed": 401,
+  "seat_rows": 40,
+  "with_env": true,
+  "input_config": "/Users/poonszesen/kg-v3-sps-py/configs/kaggriculture_4rank_bank_critic.yaml",
+  "input_config_sha256": "184ba1d924edacf3625144fb1db43f23cbe9f4696e8eac0462ff3e0de4dd1840",
+  "source_commit": "b2276bc5b70073b58a27f9e5fbd52473dbd48569",
+  "source_sha256": {
+    "scripts/bench_rollout_step.py": "4054e5f7a9a7c6239d7fc48b49b5133c3fd167ef0e878e4dc5a7ef4475da4b36",
+    "python/owl/train/ppo.py": "a5d824733941fe9237a8c807f6498cf545866f34c6c6cda2e9d71ee75dda140f",
+    "python/owl/model/kaggriculture.py": "06e0afb5ca2f610ac5add51d77a9568890749091298f42849ebe380b54f9630e",
+    "python/owl/model/kaggriculture_actor.py": "1eaaa30d26755f41237e686454e8676cde299add0f4b9e96e0c9c28d9cfe732a",
+    "python/owl/model/stateless_transformer_v1.py": "d4bf437851556bf7c5e213be935c188a06897f36c399a0f24863bd0898056658",
+    "python/owl/kaggriculture/env.py": "8ca4833f2dca871ebd6e78cd4ce3dc32488c001629e008cda8a1759b6cc0ca29",
+    "python/owl/kaggriculture/rewards.py": "7e4a3883b4f9e5dfc960e4c16072ebfd35e6cbea4bdbc100f56e8db83f5c5074",
+    "python/owl/train/utils.py": "ae5641a87d9f3c0053ab796dc26ac3ba279fd2b26ee32d70fb68fd507144f3cc",
+    "python/owl/train/config.py": "d09deba6647dfa3b64159f8c0b3f6dd07cbf9098734e60096b7c51efa2fa1a0c",
+    "python/owl/model/compile_gemm.py": "cd458527c26d9bc798cc45d69c918e4fdfbe6a0d56387bd42f95bda6d15b5561",
+    "python/owl/kaggriculture/config.py": "c504a4b6631c948fd1bfb2e666721807e6935b858b4d3ed4c66ba5bc350ad846",
+    "python/owl/game.py": "339632a71f6553ba4920b62b013c438394c4c62594ffd5072b3ff24a166d694b"
+  },
+  "cuda_device": null,
+  "arms": [
+    {
+      "variant": "baseline",
+      "resolved_config": {
+        "env": {
+          "n_envs": 20,
+          "seed": 401,
+          "config": {
+            "board_size": 10,
+            "episode_steps": 720,
+            "starting_money": 3000,
+            "max_market_orders_per_turn": 10,
+            "turns_per_day": 24,
+            "shed_capacity": 100,
+            "weed_spawn_chance": 0.005,
+            "town_shop_unlock_interval": 3,
+            "town_shop_sell_interval": 4,
+            "town_center_sell_interval": 24,
+            "farm_hand_cost_mult": 1,
+            "market_params": {},
+            "act_timeout": null,
+            "run_timeout": null,
+            "seed": null
+          },
+          "obs_spec": {
+            "obs_spec": "kaggriculture",
+            "schema_version": 3
+          },
+          "action_spec": {
+            "action_spec": "kaggriculture",
+            "hire_limit": 241
+          },
+          "reward_mode": "win_loss",
+          "reward_shaping": {
+            "econ_shaping": 0.0,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.25,
+            "econ_bank_scale": 150000.0,
+            "econ_bank_cap": 0.25,
+            "econ_margin_weight": 0.25,
+            "econ_margin_scale": 100000.0,
+            "econ_margin_cap": 0.25
+          },
+          "pin_memory": false,
+          "native_threads": 4
+        },
+        "model": {
+          "model_arch": "kaggriculture_transformer",
+          "embed_dim": 256,
+          "depth": 8,
+          "n_heads": 8,
+          "mlp_ratio": 2.0,
+          "activation": "gelu",
+          "n_scratch_tokens": 4,
+          "force_flash_attn": false,
+          "critic_offset": true,
+          "critic_offset_detach_trunk": false
+        },
+        "optimizer": {
+          "optimizer": "muon",
+          "adamw_lr": 5e-06,
+          "adamw_eps": 1e-05,
+          "weight_decay": 0.0,
+          "muon_lr": 0.0001,
+          "muon_weight_decay": 0.01,
+          "muon_momentum": 0.95,
+          "lr_schedule": {
+            "schedule": "linear_warmup_cosine_decay",
+            "warmup_steps": 1000,
+            "decay_steps": 400000,
+            "lr_min_ratio": 0.01
+          }
+        },
+        "rl": {
+          "horizon": 64,
+          "checkpoint_freq": 10000000,
+          "ppo_epochs": 1,
+          "segments_per_minibatch": 1,
+          "gradient_accumulation_steps": 1,
+          "gamma": 1.0,
+          "gae_lambda": 0.9,
+          "clip_coef": 0.2,
+          "vf_clip_coef": null,
+          "vf_coef": 2.0,
+          "value_loss": "mse",
+          "ent_coef": 1e-06,
+          "max_grad_norm": 10.0,
+          "target_kl": null,
+          "first_minibatch_logratio_limit": 0.05,
+          "ppo_clip_mode": "per_player",
+          "normalize_advantages": true,
+          "eval_replay_games": 0,
+          "teacher_mode": "last_best",
+          "teacher_init": null,
+          "teacher_kl_coef": 0.005,
+          "teacher_value_coef": 0.005,
+          "teacher_schedule": {
+            "mode": "none"
+          },
+          "teacher_segments_per_minibatch": 128,
+          "compile_mode": "default",
+          "model_compile": "none",
+          "model_compile_mode": "max-autotune-no-cudagraphs",
+          "dtype": "float32",
+          "truncation_step": null,
+          "truncation_prob": 0.0
+        },
+        "runtime": {
+          "n_runtime_gpus": 1
+        }
+      },
+      "cold_first_step_seconds": 1.3723393329419196,
+      "warmup_steps": 2,
+      "measured_steps": 5,
+      "step_seconds": [
+        1.3322090000147,
+        1.5036285419482738,
+        1.4982901669573039,
+        1.378548500011675,
+        1.4544115000171587
+      ],
+      "mean_step_seconds": 1.4334175417898223,
+      "median_step_seconds": 1.4544115000171587,
+      "seat_rows_per_second": 27.905337303221785,
+      "game_steps_per_second": 13.952668651610892,
+      "hashed_steps": 8,
+      "action_sha256": "b6ba048d537edb9487ea2c20616e2d06252c39544c7753b0e150dc042aa08ca8",
+      "final_observation_sha256": "e150d621d1567dc7b0a4b264d6b62e855c5945c8b5e740e82617ad8e11d371b8",
+      "cpu_rng_sha256": "7fac948e4eb53cf2fbebc1b537b866ec5a11f6905d74fb7fc7a1bcc25f9d3cde",
+      "cuda_rng_sha256": null,
+      "actor_compile_effective": false,
+      "packing_effective": false,
+      "d2h_effective": false,
+      "telemetry_effective": false
+    },
+    {
+      "variant": "actor",
+      "resolved_config": {
+        "env": {
+          "n_envs": 20,
+          "seed": 401,
+          "config": {
+            "board_size": 10,
+            "episode_steps": 720,
+            "starting_money": 3000,
+            "max_market_orders_per_turn": 10,
+            "turns_per_day": 24,
+            "shed_capacity": 100,
+            "weed_spawn_chance": 0.005,
+            "town_shop_unlock_interval": 3,
+            "town_shop_sell_interval": 4,
+            "town_center_sell_interval": 24,
+            "farm_hand_cost_mult": 1,
+            "market_params": {},
+            "act_timeout": null,
+            "run_timeout": null,
+            "seed": null
+          },
+          "obs_spec": {
+            "obs_spec": "kaggriculture",
+            "schema_version": 3
+          },
+          "action_spec": {
+            "action_spec": "kaggriculture",
+            "hire_limit": 241
+          },
+          "reward_mode": "win_loss",
+          "reward_shaping": {
+            "econ_shaping": 0.0,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.25,
+            "econ_bank_scale": 150000.0,
+            "econ_bank_cap": 0.25,
+            "econ_margin_weight": 0.25,
+            "econ_margin_scale": 100000.0,
+            "econ_margin_cap": 0.25
+          },
+          "pin_memory": false,
+          "native_threads": 4
+        },
+        "model": {
+          "model_arch": "kaggriculture_transformer",
+          "embed_dim": 256,
+          "depth": 8,
+          "n_heads": 8,
+          "mlp_ratio": 2.0,
+          "activation": "gelu",
+          "n_scratch_tokens": 4,
+          "force_flash_attn": false,
+          "critic_offset": true,
+          "critic_offset_detach_trunk": false
+        },
+        "optimizer": {
+          "optimizer": "muon",
+          "adamw_lr": 5e-06,
+          "adamw_eps": 1e-05,
+          "weight_decay": 0.0,
+          "muon_lr": 0.0001,
+          "muon_weight_decay": 0.01,
+          "muon_momentum": 0.95,
+          "lr_schedule": {
+            "schedule": "linear_warmup_cosine_decay",
+            "warmup_steps": 1000,
+            "decay_steps": 400000,
+            "lr_min_ratio": 0.01
+          }
+        },
+        "rl": {
+          "horizon": 64,
+          "checkpoint_freq": 10000000,
+          "ppo_epochs": 1,
+          "segments_per_minibatch": 1,
+          "gradient_accumulation_steps": 1,
+          "gamma": 1.0,
+          "gae_lambda": 0.9,
+          "clip_coef": 0.2,
+          "vf_clip_coef": null,
+          "vf_coef": 2.0,
+          "value_loss": "mse",
+          "ent_coef": 1e-06,
+          "max_grad_norm": 10.0,
+          "target_kl": null,
+          "first_minibatch_logratio_limit": 0.05,
+          "ppo_clip_mode": "per_player",
+          "normalize_advantages": true,
+          "eval_replay_games": 0,
+          "teacher_mode": "last_best",
+          "teacher_init": null,
+          "teacher_kl_coef": 0.005,
+          "teacher_value_coef": 0.005,
+          "teacher_schedule": {
+            "mode": "none"
+          },
+          "teacher_segments_per_minibatch": 128,
+          "compile_mode": "default",
+          "model_compile": "none",
+          "model_compile_mode": "max-autotune-no-cudagraphs",
+          "compile_actor_heads": true,
+          "dtype": "float32",
+          "truncation_step": null,
+          "truncation_prob": 0.0
+        },
+        "runtime": {
+          "n_runtime_gpus": 1
+        }
+      },
+      "cold_first_step_seconds": 2.598912665969692,
+      "warmup_steps": 2,
+      "measured_steps": 5,
+      "step_seconds": [
+        1.255850125104189,
+        1.2787086670286953,
+        1.3128502080217004,
+        1.342606958001852,
+        1.3446259160991758
+      ],
+      "mean_step_seconds": 1.3069283748511225,
+      "median_step_seconds": 1.3128502080217004,
+      "seat_rows_per_second": 30.606114894824717,
+      "game_steps_per_second": 15.303057447412359,
+      "hashed_steps": 8,
+      "action_sha256": "b6ba048d537edb9487ea2c20616e2d06252c39544c7753b0e150dc042aa08ca8",
+      "final_observation_sha256": "e150d621d1567dc7b0a4b264d6b62e855c5945c8b5e740e82617ad8e11d371b8",
+      "cpu_rng_sha256": "7fac948e4eb53cf2fbebc1b537b866ec5a11f6905d74fb7fc7a1bcc25f9d3cde",
+      "cuda_rng_sha256": null,
+      "actor_compile_effective": true,
+      "packing_effective": false,
+      "d2h_effective": false,
+      "telemetry_effective": false
+    },
+    {
+      "variant": "packing",
+      "resolved_config": {
+        "env": {
+          "n_envs": 20,
+          "seed": 401,
+          "config": {
+            "board_size": 10,
+            "episode_steps": 720,
+            "starting_money": 3000,
+            "max_market_orders_per_turn": 10,
+            "turns_per_day": 24,
+            "shed_capacity": 100,
+            "weed_spawn_chance": 0.005,
+            "town_shop_unlock_interval": 3,
+            "town_shop_sell_interval": 4,
+            "town_center_sell_interval": 24,
+            "farm_hand_cost_mult": 1,
+            "market_params": {},
+            "act_timeout": null,
+            "run_timeout": null,
+            "seed": null
+          },
+          "obs_spec": {
+            "obs_spec": "kaggriculture",
+            "schema_version": 3
+          },
+          "action_spec": {
+            "action_spec": "kaggriculture",
+            "hire_limit": 241
+          },
+          "reward_mode": "win_loss",
+          "reward_shaping": {
+            "econ_shaping": 0.0,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.25,
+            "econ_bank_scale": 150000.0,
+            "econ_bank_cap": 0.25,
+            "econ_margin_weight": 0.25,
+            "econ_margin_scale": 100000.0,
+            "econ_margin_cap": 0.25
+          },
+          "pin_memory": false,
+          "native_threads": 4
+        },
+        "model": {
+          "model_arch": "kaggriculture_transformer",
+          "embed_dim": 256,
+          "depth": 8,
+          "n_heads": 8,
+          "mlp_ratio": 2.0,
+          "activation": "gelu",
+          "n_scratch_tokens": 4,
+          "force_flash_attn": false,
+          "critic_offset": true,
+          "critic_offset_detach_trunk": false
+        },
+        "optimizer": {
+          "optimizer": "muon",
+          "adamw_lr": 5e-06,
+          "adamw_eps": 1e-05,
+          "weight_decay": 0.0,
+          "muon_lr": 0.0001,
+          "muon_weight_decay": 0.01,
+          "muon_momentum": 0.95,
+          "lr_schedule": {
+            "schedule": "linear_warmup_cosine_decay",
+            "warmup_steps": 1000,
+            "decay_steps": 400000,
+            "lr_min_ratio": 0.01
+          }
+        },
+        "rl": {
+          "horizon": 64,
+          "checkpoint_freq": 10000000,
+          "ppo_epochs": 1,
+          "segments_per_minibatch": 1,
+          "gradient_accumulation_steps": 1,
+          "gamma": 1.0,
+          "gae_lambda": 0.9,
+          "clip_coef": 0.2,
+          "vf_clip_coef": null,
+          "vf_coef": 2.0,
+          "value_loss": "mse",
+          "ent_coef": 1e-06,
+          "max_grad_norm": 10.0,
+          "target_kl": null,
+          "first_minibatch_logratio_limit": 0.05,
+          "ppo_clip_mode": "per_player",
+          "normalize_advantages": true,
+          "eval_replay_games": 0,
+          "teacher_mode": "last_best",
+          "teacher_init": null,
+          "teacher_kl_coef": 0.005,
+          "teacher_value_coef": 0.005,
+          "teacher_schedule": {
+            "mode": "none"
+          },
+          "teacher_segments_per_minibatch": 128,
+          "compile_mode": "default",
+          "model_compile": "none",
+          "model_compile_mode": "max-autotune-no-cudagraphs",
+          "rollout_packing": true,
+          "dtype": "float32",
+          "truncation_step": null,
+          "truncation_prob": 0.0
+        },
+        "runtime": {
+          "n_runtime_gpus": 1
+        }
+      },
+      "cold_first_step_seconds": 1.2808337920578197,
+      "warmup_steps": 2,
+      "measured_steps": 5,
+      "step_seconds": [
+        1.2935824999585748,
+        1.4554387499811128,
+        1.319369624950923,
+        1.305589042021893,
+        1.3512390840332955
+      ],
+      "mean_step_seconds": 1.3450438001891598,
+      "median_step_seconds": 1.319369624950923,
+      "seat_rows_per_second": 29.738808501533267,
+      "game_steps_per_second": 14.869404250766634,
+      "hashed_steps": 8,
+      "action_sha256": "b6ba048d537edb9487ea2c20616e2d06252c39544c7753b0e150dc042aa08ca8",
+      "final_observation_sha256": "e150d621d1567dc7b0a4b264d6b62e855c5945c8b5e740e82617ad8e11d371b8",
+      "cpu_rng_sha256": "7fac948e4eb53cf2fbebc1b537b866ec5a11f6905d74fb7fc7a1bcc25f9d3cde",
+      "cuda_rng_sha256": null,
+      "actor_compile_effective": false,
+      "packing_effective": false,
+      "d2h_effective": false,
+      "telemetry_effective": false
+    },
+    {
+      "variant": "d2h",
+      "resolved_config": {
+        "env": {
+          "n_envs": 20,
+          "seed": 401,
+          "config": {
+            "board_size": 10,
+            "episode_steps": 720,
+            "starting_money": 3000,
+            "max_market_orders_per_turn": 10,
+            "turns_per_day": 24,
+            "shed_capacity": 100,
+            "weed_spawn_chance": 0.005,
+            "town_shop_unlock_interval": 3,
+            "town_shop_sell_interval": 4,
+            "town_center_sell_interval": 24,
+            "farm_hand_cost_mult": 1,
+            "market_params": {},
+            "act_timeout": null,
+            "run_timeout": null,
+            "seed": null
+          },
+          "obs_spec": {
+            "obs_spec": "kaggriculture",
+            "schema_version": 3
+          },
+          "action_spec": {
+            "action_spec": "kaggriculture",
+            "hire_limit": 241
+          },
+          "reward_mode": "win_loss",
+          "reward_shaping": {
+            "econ_shaping": 0.0,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.25,
+            "econ_bank_scale": 150000.0,
+            "econ_bank_cap": 0.25,
+            "econ_margin_weight": 0.25,
+            "econ_margin_scale": 100000.0,
+            "econ_margin_cap": 0.25
+          },
+          "pin_memory": false,
+          "native_threads": 4
+        },
+        "model": {
+          "model_arch": "kaggriculture_transformer",
+          "embed_dim": 256,
+          "depth": 8,
+          "n_heads": 8,
+          "mlp_ratio": 2.0,
+          "activation": "gelu",
+          "n_scratch_tokens": 4,
+          "force_flash_attn": false,
+          "critic_offset": true,
+          "critic_offset_detach_trunk": false
+        },
+        "optimizer": {
+          "optimizer": "muon",
+          "adamw_lr": 5e-06,
+          "adamw_eps": 1e-05,
+          "weight_decay": 0.0,
+          "muon_lr": 0.0001,
+          "muon_weight_decay": 0.01,
+          "muon_momentum": 0.95,
+          "lr_schedule": {
+            "schedule": "linear_warmup_cosine_decay",
+            "warmup_steps": 1000,
+            "decay_steps": 400000,
+            "lr_min_ratio": 0.01
+          }
+        },
+        "rl": {
+          "horizon": 64,
+          "checkpoint_freq": 10000000,
+          "ppo_epochs": 1,
+          "segments_per_minibatch": 1,
+          "gradient_accumulation_steps": 1,
+          "gamma": 1.0,
+          "gae_lambda": 0.9,
+          "clip_coef": 0.2,
+          "vf_clip_coef": null,
+          "vf_coef": 2.0,
+          "value_loss": "mse",
+          "ent_coef": 1e-06,
+          "max_grad_norm": 10.0,
+          "target_kl": null,
+          "first_minibatch_logratio_limit": 0.05,
+          "ppo_clip_mode": "per_player",
+          "normalize_advantages": true,
+          "eval_replay_games": 0,
+          "teacher_mode": "last_best",
+          "teacher_init": null,
+          "teacher_kl_coef": 0.005,
+          "teacher_value_coef": 0.005,
+          "teacher_schedule": {
+            "mode": "none"
+          },
+          "teacher_segments_per_minibatch": 128,
+          "compile_mode": "default",
+          "model_compile": "none",
+          "model_compile_mode": "max-autotune-no-cudagraphs",
+          "pinned_action_d2h": true,
+          "dtype": "float32",
+          "truncation_step": null,
+          "truncation_prob": 0.0
+        },
+        "runtime": {
+          "n_runtime_gpus": 1
+        }
+      },
+      "cold_first_step_seconds": 1.2911078749457374,
+      "warmup_steps": 2,
+      "measured_steps": 5,
+      "step_seconds": [
+        1.365378416958265,
+        1.2993084160843864,
+        1.2974680840270594,
+        1.2961999580729753,
+        1.5289037079783157
+      ],
+      "mean_step_seconds": 1.3574517166242004,
+      "median_step_seconds": 1.2993084160843864,
+      "seat_rows_per_second": 29.46697809589472,
+      "game_steps_per_second": 14.73348904794736,
+      "hashed_steps": 8,
+      "action_sha256": "b6ba048d537edb9487ea2c20616e2d06252c39544c7753b0e150dc042aa08ca8",
+      "final_observation_sha256": "e150d621d1567dc7b0a4b264d6b62e855c5945c8b5e740e82617ad8e11d371b8",
+      "cpu_rng_sha256": "7fac948e4eb53cf2fbebc1b537b866ec5a11f6905d74fb7fc7a1bcc25f9d3cde",
+      "cuda_rng_sha256": null,
+      "actor_compile_effective": false,
+      "packing_effective": false,
+      "d2h_effective": false,
+      "telemetry_effective": false
+    },
+    {
+      "variant": "telemetry",
+      "resolved_config": {
+        "env": {
+          "n_envs": 20,
+          "seed": 401,
+          "config": {
+            "board_size": 10,
+            "episode_steps": 720,
+            "starting_money": 3000,
+            "max_market_orders_per_turn": 10,
+            "turns_per_day": 24,
+            "shed_capacity": 100,
+            "weed_spawn_chance": 0.005,
+            "town_shop_unlock_interval": 3,
+            "town_shop_sell_interval": 4,
+            "town_center_sell_interval": 24,
+            "farm_hand_cost_mult": 1,
+            "market_params": {},
+            "act_timeout": null,
+            "run_timeout": null,
+            "seed": null
+          },
+          "obs_spec": {
+            "obs_spec": "kaggriculture",
+            "schema_version": 3
+          },
+          "action_spec": {
+            "action_spec": "kaggriculture",
+            "hire_limit": 241
+          },
+          "reward_mode": "win_loss",
+          "reward_shaping": {
+            "econ_shaping": 0.0,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.25,
+            "econ_bank_scale": 150000.0,
+            "econ_bank_cap": 0.25,
+            "econ_margin_weight": 0.25,
+            "econ_margin_scale": 100000.0,
+            "econ_margin_cap": 0.25
+          },
+          "pin_memory": false,
+          "native_threads": 4,
+          "skip_reward_telemetry_validation": true
+        },
+        "model": {
+          "model_arch": "kaggriculture_transformer",
+          "embed_dim": 256,
+          "depth": 8,
+          "n_heads": 8,
+          "mlp_ratio": 2.0,
+          "activation": "gelu",
+          "n_scratch_tokens": 4,
+          "force_flash_attn": false,
+          "critic_offset": true,
+          "critic_offset_detach_trunk": false
+        },
+        "optimizer": {
+          "optimizer": "muon",
+          "adamw_lr": 5e-06,
+          "adamw_eps": 1e-05,
+          "weight_decay": 0.0,
+          "muon_lr": 0.0001,
+          "muon_weight_decay": 0.01,
+          "muon_momentum": 0.95,
+          "lr_schedule": {
+            "schedule": "linear_warmup_cosine_decay",
+            "warmup_steps": 1000,
+            "decay_steps": 400000,
+            "lr_min_ratio": 0.01
+          }
+        },
+        "rl": {
+          "horizon": 64,
+          "checkpoint_freq": 10000000,
+          "ppo_epochs": 1,
+          "segments_per_minibatch": 1,
+          "gradient_accumulation_steps": 1,
+          "gamma": 1.0,
+          "gae_lambda": 0.9,
+          "clip_coef": 0.2,
+          "vf_clip_coef": null,
+          "vf_coef": 2.0,
+          "value_loss": "mse",
+          "ent_coef": 1e-06,
+          "max_grad_norm": 10.0,
+          "target_kl": null,
+          "first_minibatch_logratio_limit": 0.05,
+          "ppo_clip_mode": "per_player",
+          "normalize_advantages": true,
+          "eval_replay_games": 0,
+          "teacher_mode": "last_best",
+          "teacher_init": null,
+          "teacher_kl_coef": 0.005,
+          "teacher_value_coef": 0.005,
+          "teacher_schedule": {
+            "mode": "none"
+          },
+          "teacher_segments_per_minibatch": 128,
+          "compile_mode": "default",
+          "model_compile": "none",
+          "model_compile_mode": "max-autotune-no-cudagraphs",
+          "dtype": "float32",
+          "truncation_step": null,
+          "truncation_prob": 0.0
+        },
+        "runtime": {
+          "n_runtime_gpus": 1
+        }
+      },
+      "cold_first_step_seconds": 1.7939720409922302,
+      "warmup_steps": 2,
+      "measured_steps": 5,
+      "step_seconds": [
+        1.3126439579064026,
+        1.3070196250919253,
+        1.2907810000469908,
+        1.3104022920597345,
+        1.3674733750522137
+      ],
+      "mean_step_seconds": 1.3176640500314534,
+      "median_step_seconds": 1.3104022920597345,
+      "seat_rows_per_second": 30.356751403398444,
+      "game_steps_per_second": 15.178375701699222,
+      "hashed_steps": 8,
+      "action_sha256": "b6ba048d537edb9487ea2c20616e2d06252c39544c7753b0e150dc042aa08ca8",
+      "final_observation_sha256": "e150d621d1567dc7b0a4b264d6b62e855c5945c8b5e740e82617ad8e11d371b8",
+      "cpu_rng_sha256": "7fac948e4eb53cf2fbebc1b537b866ec5a11f6905d74fb7fc7a1bcc25f9d3cde",
+      "cuda_rng_sha256": null,
+      "actor_compile_effective": false,
+      "packing_effective": false,
+      "d2h_effective": false,
+      "telemetry_effective": true
+    },
+    {
+      "variant": "all",
+      "resolved_config": {
+        "env": {
+          "n_envs": 20,
+          "seed": 401,
+          "config": {
+            "board_size": 10,
+            "episode_steps": 720,
+            "starting_money": 3000,
+            "max_market_orders_per_turn": 10,
+            "turns_per_day": 24,
+            "shed_capacity": 100,
+            "weed_spawn_chance": 0.005,
+            "town_shop_unlock_interval": 3,
+            "town_shop_sell_interval": 4,
+            "town_center_sell_interval": 24,
+            "farm_hand_cost_mult": 1,
+            "market_params": {},
+            "act_timeout": null,
+            "run_timeout": null,
+            "seed": null
+          },
+          "obs_spec": {
+            "obs_spec": "kaggriculture",
+            "schema_version": 3
+          },
+          "action_spec": {
+            "action_spec": "kaggriculture",
+            "hire_limit": 241
+          },
+          "reward_mode": "win_loss",
+          "reward_shaping": {
+            "econ_shaping": 0.0,
+            "econ_starvation_weight": 4.0,
+            "econ_drought_weight": 1.0,
+            "econ_cap": 0.25,
+            "econ_ineffective_weight": 0.0,
+            "econ_ineffective_cap": 0.1,
+            "econ_bank_weight": 0.25,
+            "econ_bank_scale": 150000.0,
+            "econ_bank_cap": 0.25,
+            "econ_margin_weight": 0.25,
+            "econ_margin_scale": 100000.0,
+            "econ_margin_cap": 0.25
+          },
+          "pin_memory": false,
+          "native_threads": 4,
+          "skip_reward_telemetry_validation": true
+        },
+        "model": {
+          "model_arch": "kaggriculture_transformer",
+          "embed_dim": 256,
+          "depth": 8,
+          "n_heads": 8,
+          "mlp_ratio": 2.0,
+          "activation": "gelu",
+          "n_scratch_tokens": 4,
+          "force_flash_attn": false,
+          "critic_offset": true,
+          "critic_offset_detach_trunk": false
+        },
+        "optimizer": {
+          "optimizer": "muon",
+          "adamw_lr": 5e-06,
+          "adamw_eps": 1e-05,
+          "weight_decay": 0.0,
+          "muon_lr": 0.0001,
+          "muon_weight_decay": 0.01,
+          "muon_momentum": 0.95,
+          "lr_schedule": {
+            "schedule": "linear_warmup_cosine_decay",
+            "warmup_steps": 1000,
+            "decay_steps": 400000,
+            "lr_min_ratio": 0.01
+          }
+        },
+        "rl": {
+          "horizon": 64,
+          "checkpoint_freq": 10000000,
+          "ppo_epochs": 1,
+          "segments_per_minibatch": 1,
+          "gradient_accumulation_steps": 1,
+          "gamma": 1.0,
+          "gae_lambda": 0.9,
+          "clip_coef": 0.2,
+          "vf_clip_coef": null,
+          "vf_coef": 2.0,
+          "value_loss": "mse",
+          "ent_coef": 1e-06,
+          "max_grad_norm": 10.0,
+          "target_kl": null,
+          "first_minibatch_logratio_limit": 0.05,
+          "ppo_clip_mode": "per_player",
+          "normalize_advantages": true,
+          "eval_replay_games": 0,
+          "teacher_mode": "last_best",
+          "teacher_init": null,
+          "teacher_kl_coef": 0.005,
+          "teacher_value_coef": 0.005,
+          "teacher_schedule": {
+            "mode": "none"
+          },
+          "teacher_segments_per_minibatch": 128,
+          "compile_mode": "default",
+          "model_compile": "none",
+          "model_compile_mode": "max-autotune-no-cudagraphs",
+          "compile_actor_heads": true,
+          "rollout_packing": true,
+          "pinned_action_d2h": true,
+          "dtype": "float32",
+          "truncation_step": null,
+          "truncation_prob": 0.0
+        },
+        "runtime": {
+          "n_runtime_gpus": 1
+        }
+      },
+      "cold_first_step_seconds": 1.2792538750218228,
+      "warmup_steps": 2,
+      "measured_steps": 5,
+      "step_seconds": [
+        1.3270594580098987,
+        1.3669537500245497,
+        1.363773375051096,
+        1.926617500022985,
+        2.157251709024422
+      ],
+      "mean_step_seconds": 1.6283311584265903,
+      "median_step_seconds": 1.3669537500245497,
+      "seat_rows_per_second": 24.565027692923874,
+      "game_steps_per_second": 12.282513846461937,
+      "hashed_steps": 8,
+      "action_sha256": "b6ba048d537edb9487ea2c20616e2d06252c39544c7753b0e150dc042aa08ca8",
+      "final_observation_sha256": "e150d621d1567dc7b0a4b264d6b62e855c5945c8b5e740e82617ad8e11d371b8",
+      "cpu_rng_sha256": "7fac948e4eb53cf2fbebc1b537b866ec5a11f6905d74fb7fc7a1bcc25f9d3cde",
+      "cuda_rng_sha256": null,
+      "actor_compile_effective": true,
+      "packing_effective": false,
+      "d2h_effective": false,
+      "telemetry_effective": true
+    }
+  ],
+  "parity": {
+    "reference_variant": "baseline",
+    "comparison_count": 5,
+    "comparisons": [
+      {
+        "variant": "actor",
+        "matches": {
+          "action_sha256": true,
+          "final_observation_sha256": true,
+          "cpu_rng_sha256": true,
+          "cuda_rng_sha256": true
+        },
+        "all_exact": true
+      },
+      {
+        "variant": "packing",
+        "matches": {
+          "action_sha256": true,
+          "final_observation_sha256": true,
+          "cpu_rng_sha256": true,
+          "cuda_rng_sha256": true
+        },
+        "all_exact": true
+      },
+      {
+        "variant": "d2h",
+        "matches": {
+          "action_sha256": true,
+          "final_observation_sha256": true,
+          "cpu_rng_sha256": true,
+          "cuda_rng_sha256": true
+        },
+        "all_exact": true
+      },
+      {
+        "variant": "telemetry",
+        "matches": {
+          "action_sha256": true,
+          "final_observation_sha256": true,
+          "cpu_rng_sha256": true,
+          "cuda_rng_sha256": true
+        },
+        "all_exact": true
+      },
+      {
+        "variant": "all",
+        "matches": {
+          "action_sha256": true,
+          "final_observation_sha256": true,
+          "cpu_rng_sha256": true,
+          "cuda_rng_sha256": true
+        },
+        "all_exact": true
+      }
+    ]
+  }
+}

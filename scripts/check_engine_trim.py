@@ -20,6 +20,9 @@ from typing import TypedDict, cast
 
 PIN = "65f0eac5bb00b18a9d3acce319c2a231cbd5dff0"
 LIB_SHA256 = "c4b9bac5057be3a435d2f1035aae17bcd15e7f95ea8557322e4929877c8231fd"
+CANDIDATE_LIB_SHA256 = (
+    "2669c74e20f7ce2876c983ed56fa519aac121d662ab44ddd1191b7f89f091c4b"
+)
 # Only these retained files may carry declared edits; every other retained file
 # (LICENSE, RNG/attribution sources, RNG tests, fixtures) stays byte-identical.
 EDITABLE = frozenset(
@@ -46,6 +49,10 @@ TRIM_APPENDIX_HEADING = "\n## Task 1.1 rules-only trim \u2014 2026-09-29\n".enco
 # `## ` section (later provenance may be appended after it, never inside it).
 TRIM_APPENDIX_SHA256 = (
     "1d089760261e8fef7ed0fddcaaa1a60776cb9abbb65386ef08d529f863d76c93"
+)
+CANDIDATE_APPENDIX_HEADING = "\n## Transactional candidate API — 2026-10-01\n".encode()
+CANDIDATE_APPENDIX_SHA256 = (
+    "583e88d8c8e429a937dd5960576816eb42e0eb63369e9ec2b64cf9dbc0d88750"
 )
 GENERATED_DIR = "engine_rs/fixtures/generated"
 GENERATED_MANIFEST = f"{GENERATED_DIR}/MANIFEST.json"
@@ -520,10 +527,16 @@ def verify_task(
         for number, line in enumerate(original_lines, start=1)
         if number not in removed
     )
-    _require(
-        current["engine_rs/src/lib.rs"] == expected_lib, "lib.rs: exact seven removals"
-    )
     _require(sha(expected_lib) == LIB_SHA256, "lib.rs: expected trim SHA-256")
+    expected_lib = _candidate_api(expected_lib)
+    _require(
+        current["engine_rs/src/lib.rs"] == expected_lib,
+        "lib.rs: exact seven removals and transactional API extraction",
+    )
+    _require(
+        sha(expected_lib) == CANDIDATE_LIB_SHA256,
+        "lib.rs: expected candidate API SHA-256",
+    )
     cargo = (
         originals["engine_rs/Cargo.toml"]
         .replace(b'crate-type = ["rlib", "cdylib"]\n', b"")
@@ -541,6 +554,33 @@ def verify_task(
     )
     _verify_provenance(
         originals["engine_rs/VENDORED_FROM.md"], current["engine_rs/VENDORED_FROM.md"]
+    )
+
+
+def _candidate_api(trimmed: bytes) -> bytes:
+    """Apply only the fixed 2026-10-01 transactional API extraction."""
+    signature = (
+        b"    pub fn step_with_market_metrics(&mut self, actions: &[Value]) "
+        b"-> Result<StepMetrics, String> {\n"
+    )
+    replacement = signature + (
+        b"        let (candidate, metrics) = "
+        b"self.stepped_with_market_metrics(actions)?;\n"
+        b"        *self = candidate;\n"
+        b"        Ok(metrics)\n"
+        b"    }\n\n"
+        b"    /// Return a successfully stepped copy while leaving "
+        b"the source game untouched.\n"
+        b"    /// Batch callers can stage this candidate "
+        b"without first cloning the source.\n"
+        b"    pub fn stepped_with_market_metrics(&self, actions: &[Value]) "
+        b"-> Result<(Self, StepMetrics), String> {\n"
+    )
+    commit = b"        *self = candidate;\n        Ok(metrics)\n"
+    _require(trimmed.count(signature) == 1, "lib.rs: original step signature")
+    _require(trimmed.count(commit) == 1, "lib.rs: original candidate commit")
+    return trimmed.replace(commit, b"        Ok((candidate, metrics))\n").replace(
+        signature, replacement
     )
 
 
@@ -571,6 +611,17 @@ def _verify_provenance(original: bytes, current: bytes) -> None:
     _require(
         tail.startswith(TRIM_APPENDIX_HEADING) and sha(section) == TRIM_APPENDIX_SHA256,
         "VENDORED_FROM.md: Task 1.1 trim appendix must follow the history unchanged",
+    )
+    _require(
+        tail.count(CANDIDATE_APPENDIX_HEADING) == 1,
+        "VENDORED_FROM.md: exactly one transactional candidate appendix is required",
+    )
+    candidate = tail[tail.index(CANDIDATE_APPENDIX_HEADING) :]
+    end = candidate.find(b"\n## ", 1)
+    section = candidate if end < 0 else candidate[:end]
+    _require(
+        sha(section) == CANDIDATE_APPENDIX_SHA256,
+        "VENDORED_FROM.md: transactional candidate appendix must stay unchanged",
     )
 
 

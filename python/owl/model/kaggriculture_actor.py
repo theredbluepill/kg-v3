@@ -101,19 +101,51 @@ def _slot_kl(
     return kl.to(dtype=student_logits.dtype) * weight
 
 
-def gumbel_perturb(masked_logits: torch.Tensor) -> torch.Tensor:
+def gumbel_perturb(
+    masked_logits: torch.Tensor, exponentials: torch.Tensor | None = None
+) -> torch.Tensor:
     """Add independent standard Gumbel noise (``-log Exp(1)``) to every entry."""
-    noise = torch.empty_like(masked_logits).exponential_()
+    noise = (
+        torch.empty_like(masked_logits).exponential_()
+        if exponentials is None
+        else exponentials
+    )
     tiny = torch.finfo(masked_logits.dtype).tiny
     return masked_logits - noise.clamp_min(tiny).log()
 
 
-def gumbel_argmax(masked_logits: torch.Tensor) -> torch.Tensor:
+def gumbel_argmax(
+    masked_logits: torch.Tensor, exponentials: torch.Tensor | None = None
+) -> torch.Tensor:
     """Exact categorical sample over the last dim via Gumbel-max.
 
     ``masked_logits`` carries ``-inf`` outside the support; no multinomial.
     """
-    return gumbel_perturb(masked_logits).argmax(dim=-1)
+    return gumbel_perturb(masked_logits, exponentials).argmax(dim=-1)
+
+
+def sample_policy_exponentials(unit_input: torch.Tensor) -> dict[int, torch.Tensor]:
+    """Draw the eager sampler's nine RNG calls outside the compiled core.
+
+    Slot order, dense shapes (including masked entries), contiguous layout and
+    density dtype match ``policy_core``. Moving these calls before its tensor
+    arithmetic preserves the RNG stream because that arithmetic has no other
+    randomness. Inductor's random kernels do not promise eager RNG parity.
+    """
+    rows, actors = unit_input.shape[:2]
+    dtype = torch.float64 if unit_input.dtype == torch.float64 else torch.float32
+    return {
+        slot: torch.empty(
+            (
+                rows,
+                actors if slot in UNIT_POLICY_SLOTS else MARKET_POSITIONS,
+                kt.SLOT_WIDTHS[slot],
+            ),
+            device=unit_input.device,
+            dtype=dtype,
+        ).exponential_()
+        for slot in POLICY_SLOTS
+    }
 
 
 def couple_market_kinds(
@@ -273,6 +305,7 @@ class KaggricultureGrammarActor(nn.Module):
         deterministic: bool,
         teacher_logits: dict[int, torch.Tensor] | None = None,
         collect_logits: bool = False,
+        exponentials: dict[int, torch.Tensor] | None = None,
     ) -> GrammarPolicyResult:
         """Sample (``supplied_tokens is None``) or replay one row chunk.
 
@@ -283,6 +316,9 @@ class KaggricultureGrammarActor(nn.Module):
         teacher side); ``teacher_logits`` (keyed by ``POLICY_SLOTS``, row
         layout of this chunk) adds the per-slot KL against them, evaluated at
         the same replayed prefix (the student side).
+
+        ``exponentials`` supplies eager RNG draws for compiled sampling. Replay
+        and deterministic decoding ignore them and never draw randomness.
         """
         rows, actors, _ = unit_input.shape
         device = unit_input.device
@@ -333,7 +369,13 @@ class KaggricultureGrammarActor(nn.Module):
                 choice, admitted = _safe_choice(raw, mask)
             else:
                 masked = logits.masked_fill(~mask, -torch.inf)
-                choice = masked.argmax(-1) if deterministic else gumbel_argmax(masked)
+                choice = (
+                    masked.argmax(-1)
+                    if deterministic
+                    else gumbel_argmax(
+                        masked, None if exponentials is None else exponentials[slot]
+                    )
+                )
                 admitted = mask.gather(-1, choice.unsqueeze(-1)).squeeze(-1)
             logp, entropy, _ = _masked_density(logits, mask, choice)
             if collect_logits or teacher_logits is not None:
@@ -373,7 +415,14 @@ class KaggricultureGrammarActor(nn.Module):
             # Eight independent Gumbels per position, independent across
             # positions; the correction reuses these perturbed scores.
             masked = kind_logits.masked_fill(~initial_mask, -torch.inf)
-            perturbed = masked if deterministic else gumbel_perturb(masked)
+            perturbed = (
+                masked
+                if deterministic
+                else gumbel_perturb(
+                    masked,
+                    None if exponentials is None else exponentials[SLOT["market_kind"]],
+                )
+            )
             kind = couple_market_kinds(perturbed, actor_counts, hire_limit)
             kind_in_range = torch.ones_like(available)
         # Density uses the final HIRE prefix: exactly the sequential support up
@@ -419,7 +468,13 @@ class KaggricultureGrammarActor(nn.Module):
                 choice, admitted = _safe_choice(raw, mask)
             else:
                 masked = logits.masked_fill(~mask, -torch.inf)
-                choice = masked.argmax(-1) if deterministic else gumbel_argmax(masked)
+                choice = (
+                    masked.argmax(-1)
+                    if deterministic
+                    else gumbel_argmax(
+                        masked, None if exponentials is None else exponentials[slot]
+                    )
+                )
                 admitted = mask.gather(-1, choice.unsqueeze(-1)).squeeze(-1)
             logp, entropy, _ = _masked_density(logits, mask, choice)
             if collect_logits or teacher_logits is not None:

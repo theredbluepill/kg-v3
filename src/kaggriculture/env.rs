@@ -250,6 +250,9 @@ pub struct NativeEnv {
     slots: Vec<EnvSlot>,
     stream: SeedStream,
     transition: TransitionCache,
+    // Taken by prepare_step and returned at commit (or worker failure). Each
+    // writer clears its own rows, including padding, before encoding.
+    step_staging: Option<ObsStaging>,
     #[cfg(test)]
     fault: Option<Fault>,
 }
@@ -342,6 +345,7 @@ impl NativeEnv {
                 slots,
                 stream,
                 transition,
+                step_staging: Some(staging),
                 #[cfg(test)]
                 fault: None,
             })
@@ -419,7 +423,7 @@ impl NativeEnv {
     ) -> Result<(), EnvError> {
         let n = self.n_envs();
         transition.validate(n)?;
-        if out.envs_mut().count() != n || pending.staging.buffers_mut().envs_mut().count() != n {
+        if out.n_envs() != n || pending.staging.buffers_mut().n_envs() != n {
             return Err(EnvError::Value(
                 "observation publication n_envs mismatch".into(),
             ));
@@ -521,113 +525,69 @@ impl NativeEnv {
                     "tokens/lengths: batch shape mismatch".into(),
                 ));
             }
-            // Raw signed transport is admitted before seed reservation or any
-            // narrowing; complete State decoding follows reservation below.
-            let bot_seats: Vec<Option<usize>> = self
-                .slots
-                .iter()
-                .map(|slot| slot.bot.as_ref().map(HostedSeat::seat))
-                .collect();
-            for (row, (tokens, length)) in tokens
-                .chunks_exact(grammar::TOKENS_PER_SEAT)
-                .zip(lengths)
-                .enumerate()
-            {
-                if bot_seats[row / 2] == Some(row % 2) {
-                    // The scripted seat's transport must be the absent program:
-                    // nothing the learner submits for it is ever executed.
-                    if *length != 0 || tokens.iter().any(|token| *token != 0) {
-                        return Err(EnvError::Value(format!(
-                            "env={} seat={} is played by the fixed opponent; submit length 0 and zero tokens",
-                            row / 2,
-                            row % 2
-                        )));
-                    }
-                    continue;
-                }
-                if !(1..=grammar::MAX_FRAMES as i64).contains(length) {
-                    return Err(EnvError::Value(format!(
-                        "env={} seat={} length outside 1..=252",
-                        row / 2,
-                        row % 2
-                    )));
-                }
-                for (i, token) in tokens.iter().enumerate() {
-                    if *token < 0
-                        || *token >= grammar::SLOT_WIDTHS[i % grammar::SLOTS] as i64
-                        || (i >= *length as usize * grammar::SLOTS && *token != 0)
-                    {
-                        return Err(EnvError::Value(format!(
-                            "env={} seat={} frame={} slot={} invalid token/padding",
-                            row / 2,
-                            row % 2,
-                            i / grammar::SLOTS,
-                            grammar::SLOT_NAMES[i % grammar::SLOTS]
-                        )));
-                    }
-                }
-            }
-            let terminal: Vec<bool> = self
-                .slots
-                .iter()
-                .map(|s| i128::from(s.steps) >= i128::from(self.episode_steps) - 2)
-                .collect();
+            // Admission and decoding are independent per env. Keep their results
+            // separate to retain the old error priority: all raw transport,
+            // then seed overflow, then all grammar errors, then engine work.
+            let admitted: Vec<_> = self.pool.install(|| {
+                self.slots
+                    .par_iter()
+                    .enumerate()
+                    .map(|(i, slot)| {
+                        caught(|| {
+                            let offset = i * 2 * grammar::TOKENS_PER_SEAT;
+                            let tokens = &tokens[offset..offset + 2 * grammar::TOKENS_PER_SEAT];
+                            let lengths = &lengths[i * 2..i * 2 + 2];
+                            admit_transport(i, slot, tokens, lengths)?;
+                            let terminal =
+                                i128::from(slot.steps) >= i128::from(self.episode_steps) - 2;
+                            let actions = caught(|| {
+                                decode_actions(i, slot, tokens, lengths, self.hire_limit)
+                            });
+                            Ok((terminal, actions))
+                        })
+                    })
+                    .collect()
+            });
+            let admitted = admitted.into_iter().collect::<Result<Vec<_>, _>>()?;
+            let terminal: Vec<_> = admitted.iter().map(|(terminal, _)| *terminal).collect();
             let (seeds, stream) = self.stream.reserve(&terminal)?;
-            let mut actions = Vec::with_capacity(n);
-            for (env, slot) in self.slots.iter().enumerate() {
-                let mut pair = Vec::with_capacity(2);
-                for seat in 0..2 {
-                    if bot_seats[env] == Some(seat) {
-                        // Filled by the hosted controller inside the worker.
-                        pair.push(serde_json::Value::Null);
-                        continue;
-                    }
-                    let offset = (env * 2 + seat) * grammar::TOKENS_PER_SEAT;
-                    let plan = grammar::plan(slot.actors[seat], slot.orders, self.hire_limit)?;
-                    pair.push(
-                        grammar::decode(
-                            &plan,
-                            &tokens[offset..offset + grammar::TOKENS_PER_SEAT],
-                            lengths[env * 2 + seat],
-                        )
-                        .map_err(|e| EnvError::Value(format!("env={env} seat={seat} {e}")))?,
-                    );
-                }
-                actions.push(pair);
-            }
-            let candidates: Vec<_> = self.slots.iter().map(|s| s.game.clone()).collect();
-            let mut staging = ObsStaging::new(n)?;
+            let actions = admitted
+                .into_iter()
+                .map(|(_, actions)| actions)
+                .collect::<Result<Vec<_>, _>>()?;
+            // A discarded pending batch is allowed (e.g. Python return allocation
+            // failed); only that cold path needs to allocate replacement staging.
+            let mut staging = match self.step_staging.take() {
+                Some(staging) => staging,
+                None => ObsStaging::new(n)?,
+            };
             let results: Vec<Result<(EnvSlot, TransitionRow), EnvError>> =
                 self.pool.install(|| {
-                    candidates
+                    actions
                         .into_par_iter()
                         .zip(staging.buffers_mut().par_envs_mut())
                         .enumerate()
-                        .map(|(i, (mut game, mut rows))| {
+                        .map(|(i, (mut actions, mut rows))| {
                             caught(|| {
                                 let slot = &self.slots[i];
-                                let before_banks = game_banks(&game)?;
-                                let before_econ = game_econ(&game)?;
-                                let before_hires = executed_hires(&game)?;
+                                let before_banks = game_banks(&slot.game)?;
+                                let before_econ = game_econ(&slot.game)?;
+                                let before_hires = executed_hires(&slot.game)?;
                                 // The controller is cloned so a failed batch
                                 // leaves the committed one untouched.
                                 let mut bot = slot.bot.clone();
-                                let hosted_joint;
-                                let joint: &[serde_json::Value] = match bot.as_mut() {
-                                    None => &actions[i],
-                                    Some(bot) => {
-                                        let seat = bot.seat();
-                                        let mut pair = actions[i].clone();
-                                        pair[seat] = bot
-                                            .action(slot.prepared.snapshot().clone())
-                                            .map_err(|e| {
+                                if let Some(bot) = bot.as_mut() {
+                                    let seat = bot.seat();
+                                    actions[seat] = bot
+                                        .action(slot.prepared.snapshot().clone())
+                                        .map_err(|e| {
                                             EnvError::Value(format!("opponent seat={seat}: {e}"))
                                         })?;
-                                        hosted_joint = pair;
-                                        &hosted_joint
-                                    },
-                                };
-                                game.step_with_market_metrics(joint)?;
+                                }
+                                // The engine returns its single transactional
+                                // clone. The committed slot remains untouched.
+                                let (mut game, _) =
+                                    slot.game.stepped_with_market_metrics(&actions)?;
                                 #[cfg(test)]
                                 {
                                     self.inject(FaultPoint::StepResult, i)?;
@@ -750,12 +710,19 @@ impl NativeEnv {
                         .collect()
                 });
             // Indexed collection joins every worker before choosing the first
-            // error in env order. Nothing published by successful peers.
-            let results = results.into_iter().collect::<Result<Vec<_>, _>>()?;
+            // error in env order. Return scratch on failure and destroy successful
+            // peers on workers; no candidate has touched a committed game/output.
+            if let Some(error) = results.iter().find_map(|result| result.as_ref().err()) {
+                let error = error.clone();
+                self.step_staging = Some(staging);
+                self.pool.install(|| results.into_par_iter().for_each(drop));
+                return Err(error);
+            }
+            let results = results.into_iter().map(Result::unwrap);
             let mut transition = TransitionCache::zeros(n);
             let mut candidates = Vec::with_capacity(n);
             let mut metrics = Vec::new();
-            for (i, (slot, row)) in results.into_iter().enumerate() {
+            for (i, (slot, row)) in results.enumerate() {
                 transition.rewards[i * 2..i * 2 + 2].copy_from_slice(&row.rewards);
                 transition.dones[i * 2..i * 2 + 2].fill(row.done);
                 transition.transition_banks_before[i * 2..i * 2 + 2]
@@ -798,32 +765,125 @@ impl NativeEnv {
         // never installs replacement slots; truncate never publishes transitions.
         let n = self.n_envs();
         transition.validate(n)?;
-        if out.envs_mut().count() != n
-            || pending.staging.buffers_mut().envs_mut().count() != n
+        if out.n_envs() != n
+            || pending.staging.buffers_mut().n_envs() != n
             || pending.candidates.len() != n
             || pending.selected.as_ref().is_some_and(|m| m.len() != n)
         {
             return Err(EnvError::Value("publication n_envs mismatch".into()));
         }
-        if let Some(selected) = &pending.selected {
-            commit_selected_rows(&mut pending.staging.buffers_mut(), out, selected);
-        } else {
-            pending.staging.publish(out)?;
-        }
         // COMMIT: all remaining operations are admitted copies or swaps.
+        // Every worker owns disjoint caller rows and drops its replaced game and
+        // snapshot here, rather than returning those allocations to the caller.
+        self.pool.install(|| {
+            pending
+                .staging
+                .buffers_mut()
+                .par_envs_mut()
+                .zip(out.par_envs_mut())
+                .zip(self.slots.par_iter_mut())
+                .zip(pending.candidates.into_par_iter())
+                .enumerate()
+                .for_each(|(i, (((src, dst), slot), candidate))| {
+                    if pending.selected.as_ref().is_none_or(|mask| mask[i]) {
+                        for (src, dst) in src.seats.into_iter().zip(dst.seats) {
+                            copy_row(src, dst);
+                        }
+                    }
+                    if let Some(candidate) = candidate {
+                        *slot = candidate;
+                    }
+                });
+        });
         if let Some(mut next) = pending.transition {
             next.publish(transition);
             std::mem::swap(&mut self.transition, &mut next);
         }
-        for (slot, candidate) in self.slots.iter_mut().zip(pending.candidates.iter_mut()) {
-            if let Some(candidate) = candidate {
-                std::mem::swap(slot, candidate);
-            }
+        let old_staging = self.step_staging.replace(pending.staging);
+        if let Some(old_staging) = old_staging {
+            self.pool.install(|| drop(old_staging));
         }
         std::mem::swap(&mut self.stream, &mut pending.stream);
         Ok(())
     }
 }
+fn admit_transport(
+    env: usize,
+    slot: &EnvSlot,
+    tokens: &[i64],
+    lengths: &[i64],
+) -> Result<(), EnvError> {
+    let bot_seat = slot.bot.as_ref().map(HostedSeat::seat);
+    for (row, (tokens, length)) in tokens
+        .chunks_exact(grammar::TOKENS_PER_SEAT)
+        .zip(lengths)
+        .enumerate()
+    {
+        if bot_seat == Some(row) {
+            // The scripted seat's transport must be the absent program:
+            // nothing the learner submits for it is ever executed.
+            if *length != 0 || tokens.iter().any(|token| *token != 0) {
+                return Err(EnvError::Value(format!(
+                            "env={} seat={} is played by the fixed opponent; submit length 0 and zero tokens",
+                            env,
+                            row
+                        )));
+            }
+            continue;
+        }
+        if !(1..=grammar::MAX_FRAMES as i64).contains(length) {
+            return Err(EnvError::Value(format!(
+                "env={} seat={} length outside 1..=252",
+                env, row
+            )));
+        }
+        for (i, token) in tokens.iter().enumerate() {
+            if *token < 0
+                || *token >= grammar::SLOT_WIDTHS[i % grammar::SLOTS] as i64
+                || (i >= *length as usize * grammar::SLOTS && *token != 0)
+            {
+                return Err(EnvError::Value(format!(
+                    "env={} seat={} frame={} slot={} invalid token/padding",
+                    env,
+                    row,
+                    i / grammar::SLOTS,
+                    grammar::SLOT_NAMES[i % grammar::SLOTS]
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn decode_actions(
+    env: usize,
+    slot: &EnvSlot,
+    tokens: &[i64],
+    lengths: &[i64],
+    hire_limit: i64,
+) -> Result<Vec<serde_json::Value>, EnvError> {
+    let bot_seat = slot.bot.as_ref().map(HostedSeat::seat);
+    let mut pair = Vec::with_capacity(2);
+    for (seat, &length) in lengths.iter().enumerate() {
+        if bot_seat == Some(seat) {
+            // Filled by the hosted controller inside the worker.
+            pair.push(serde_json::Value::Null);
+            continue;
+        }
+        let offset = seat * grammar::TOKENS_PER_SEAT;
+        let plan = grammar::plan(slot.actors[seat], slot.orders, hire_limit)?;
+        pair.push(
+            grammar::decode(
+                &plan,
+                &tokens[offset..offset + grammar::TOKENS_PER_SEAT],
+                length,
+            )
+            .map_err(|e| EnvError::Value(format!("env={env} seat={seat} {e}")))?,
+        );
+    }
+    Ok(pair)
+}
+
 fn at_env(i: usize, error: EnvError) -> EnvError {
     match error {
         EnvError::Value(s) => EnvError::Value(format!("env={i} {s}")),
@@ -832,19 +892,6 @@ fn at_env(i: usize, error: EnvError) -> EnvError {
     }
 }
 
-fn commit_selected_rows(
-    staging: &mut ValidatedObsBuffersMut<'_>,
-    out: &mut ValidatedObsBuffersMut<'_>,
-    selected: &[bool],
-) {
-    for ((src, dst), selected) in staging.envs_mut().zip(out.envs_mut()).zip(selected) {
-        if *selected {
-            for (src, dst) in src.seats.into_iter().zip(dst.seats) {
-                copy_row(src, dst);
-            }
-        }
-    }
-}
 fn copy_row(src: ObsRowMut<'_>, dst: ObsRowMut<'_>) {
     let ObsRowMut {
         tile_kind,

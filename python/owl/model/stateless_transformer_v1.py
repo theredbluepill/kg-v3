@@ -3224,6 +3224,62 @@ def pack_sequence(
     return pack_tensor(x, packed), packed
 
 
+def pack_sequence_from_cpu_mask(
+    x: torch.Tensor,
+    token_mask_cpu: torch.Tensor,
+    *,
+    token_mask: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, PackedSequence]:
+    """Pack from the current observation's host mask without device readbacks.
+
+    The caller must supply the CPU mask for exactly ``x``'s observation and row
+    order. Mask validation and exact-size ``nonzero`` run on CPU. CUDA metadata
+    transfers use fresh pinned allocations, which PyTorch keeps alive until
+    their asynchronous copies finish. Supplying ``token_mask`` additionally
+    checks equality against the device mask for diagnostics; that check can
+    synchronize and is deliberately absent from the rollout hot path.
+
+    The padded length is a legal flash-attn varlen upper bound: its kernels
+    derive each actual sequence length from adjacent ``cu_seqlens`` entries.
+    Only valid tokens are packed, so this does not add padded trunk work.
+    """
+    if token_mask_cpu.device.type != "cpu":
+        raise ValueError("rollout packing requires a CPU token mask")
+    if token_mask_cpu.dtype != torch.bool or token_mask_cpu.ndim != 2:
+        raise ValueError("rollout packing requires a 2D boolean token mask")
+    if token_mask_cpu.shape != x.shape[:2]:
+        raise ValueError("CPU token mask shape must match the padded input rows")
+    if token_mask_cpu.numel() == 0:
+        raise ValueError("rollout packing requires nonempty input rows")
+    if token_mask is not None:
+        if token_mask.dtype != torch.bool or token_mask.shape != token_mask_cpu.shape:
+            raise ValueError("device token mask must match the CPU token mask shape")
+        if not torch.equal(token_mask_cpu, token_mask.cpu()):
+            raise ValueError(
+                "CPU token mask differs from the current device token mask"
+            )
+    host = build_packed_sequence(token_mask_cpu, max_seqlen=token_mask_cpu.shape[1])
+    if x.device.type == "cpu":
+        packed = host
+    else:
+        pin = x.device.type == "cuda"
+
+        def transfer(value: torch.Tensor) -> torch.Tensor:
+            if pin:
+                value = value.pin_memory()
+            return value.to(device=x.device, non_blocking=pin)
+
+        packed = PackedSequence(
+            indices=transfer(host.indices),
+            cu_seqlens=transfer(host.cu_seqlens),
+            seqlens=transfer(host.seqlens),
+            max_seqlen=host.max_seqlen,
+            batch_size=host.batch_size,
+            padded_seq_len=host.padded_seq_len,
+        )
+    return pack_tensor(x, packed), packed
+
+
 def _packed_subset_for_batch_indices(
     packed: PackedSequence,
     batch_indices: torch.Tensor,

@@ -229,8 +229,13 @@ with Orbit. The test-only `RandomCall::Uniform` fixture fields deserialize throu
 `serde_json::Number` and reject non-finite conversions. A literal decimal regression
 passed before unification, failed afterward, then passed with this repair. Production
 Orbit generation and comparison tolerances are unchanged. The native observation
-writer lives entirely in root `src/kaggriculture/`; the kernel remains byte-pinned.
-Its config-bound wrapper uses the public snapshot API and forwards stepping only.
+writer lives entirely in root `src/kaggriculture/`. The kernel's declared byte
+changes remain pinned by `TRIM_MANIFEST.json` and the independent trim checker.
+Since the native SPS refinement (2026-10-01), `stepped_with_market_metrics(&self)`
+returns the engine's transactional candidate and metrics, letting the adapter
+avoid a second game clone. The mutating API delegates to the same implementation;
+`step_in_place`, rules, RNG and action order are unchanged. Its config-bound
+wrapper uses the public snapshot API and forwards stepping only.
 Exact fields, strict tiles and both-seat privacy checks are observation coverage,
 not new Python-engine rules parity. Task 1.3 receipts, including the qualified
 512-state oracle and the pending pod timing, are in `ops/rebuild-2026-09-29/1.3/`.

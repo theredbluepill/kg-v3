@@ -8,6 +8,9 @@ mean absolute margin (cash-difference) component over every seat (its signed
 mean is zero: the term is zero-sum). Both are recomputed in float64 from the
 transition banks by the reward oracle and are zero with their term off. They
 are metric-logger telemetry only and never reach the model or the rewards.
+``skip_reward_telemetry_validation`` omits only their repeated finite-bank
+scans: native reward publication already checks bank finiteness. Shape, dtype,
+arithmetic and the default validation path stay unchanged.
 
 Fixed-opponent collection (``opponent_bot``/``opponent_envs``): the first
 ``opponent_envs`` envs host a native scripted seat. ``learner_mask`` is the
@@ -187,6 +190,7 @@ class KaggricultureVectorizedEnv:
         action_spec: KaggricultureActionConfig,
         opponent_bot: str | None = None,
         opponent_envs: int = 0,
+        skip_reward_telemetry_validation: bool = False,
     ) -> None:
         for name, value, low in (
             ("n_envs", n_envs, 1),
@@ -198,6 +202,8 @@ class KaggricultureVectorizedEnv:
                 raise ValueError(f"{name} must be an integer in {low}..2**63-1")
         if reward_mode != "win_loss":
             raise ValueError("Kaggriculture requires reward_mode='win_loss'")
+        if type(skip_reward_telemetry_validation) is not bool:
+            raise TypeError("skip_reward_telemetry_validation must be a bool")
         if (opponent_bot is None) != (opponent_envs == 0) or not (
             type(opponent_envs) is int and 0 <= opponent_envs <= n_envs
         ):
@@ -211,6 +217,7 @@ class KaggricultureVectorizedEnv:
         self._action_spec = action_spec
         self._reward_mode = reward_mode
         self._reward_config = reward_config
+        self._validate_reward_telemetry = not skip_reward_telemetry_validation
         self._pin_memory_enabled = pin_memory
         self.transfer_device = transfer_device
         self._observations = allocate_observation_buffers(n_envs, pin_memory=pin_memory)
@@ -503,6 +510,7 @@ class KaggricultureVectorizedEnv:
                     self._transition_banks_before,
                     self._transition_banks_after,
                     self._reward_config,
+                    validate_finite=self._validate_reward_telemetry,
                 ).mean()
             )
             if self._reward_config.econ_bank_weight > 0
@@ -515,6 +523,7 @@ class KaggricultureVectorizedEnv:
                     self._transition_banks_before,
                     self._transition_banks_after,
                     self._reward_config,
+                    validate_finite=self._validate_reward_telemetry,
                 )
                 .abs()
                 .mean()

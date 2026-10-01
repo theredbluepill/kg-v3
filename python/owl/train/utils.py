@@ -32,6 +32,9 @@ class DTypeConfig(Protocol):
 
 class ModelCompileConfig(Protocol):
     @property
+    def compile_actor_heads(self) -> bool: ...
+
+    @property
     def model_compile(self) -> ModelCompileTarget: ...
 
     @property
@@ -88,6 +91,15 @@ def configure_model_compile(model: nn.Module, cfg: ModelCompileConfig) -> int:
     Orbit): here for ``mlp``, inside ``compile_transformer_trunk`` for ``trunk``.
     One process never compiles both games.
     """
+    compiled_heads = 0
+    if cfg.compile_actor_heads:
+        if not isinstance(model, KaggricultureTransformer):
+            raise ValueError("rl.compile_actor_heads requires a Kaggriculture model")
+        compiled_heads = model.compile_actor_heads(mode=cfg.model_compile_mode)
+    return compiled_heads + _configure_trunk_compile(model, cfg)
+
+
+def _configure_trunk_compile(model: nn.Module, cfg: ModelCompileConfig) -> int:
     match cfg.model_compile:
         case "none":
             return 0

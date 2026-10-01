@@ -12,7 +12,8 @@ actor input projection. Each seat row is encoded and decided independently.
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Literal, Self, TypeVar
 
@@ -53,6 +54,7 @@ from owl.model.kaggriculture_actor import (
     GrammarPolicyResult,
     KaggricultureGrammarActor,
     check_replay_flags,
+    sample_policy_exponentials,
 )
 from owl.model.kaggriculture_teacher import (
     GrammarSignature,
@@ -72,6 +74,7 @@ from owl.model.stateless_transformer_v1 import (
     _init_module,
     _requires_flash_attn,
     pack_sequence,
+    pack_sequence_from_cpu_mask,
     unpack_sequence,
 )
 from owl.model.teacher_targets import TeacherTargets
@@ -316,10 +319,11 @@ class KaggricultureTransformer(
             ]
             | None
         ) = None
-        # Heads run eager in production; tests swap in a captured core here.
+        # Opt-in compiled heads; eager remains the default.
         self._compiled_actor_core: Callable[..., GrammarPolicyResult] | None = None
-        # True once any trunk region is compiled (trunk or block-MLP target);
-        # every later trunk call re-checks the GEMM backends, because Inductor
+        self._rollout_token_mask_cpu: torch.Tensor | None = None
+        # True once a trunk or actor region is compiled;
+        # every later compiled dispatch re-checks GEMM backends, because Inductor
         # compiles lazily and recompiles on new dynamic shapes.
         self.compiled_regions_require_gemm_backends = False
         # Per-seat critic offset head (model.critic_offset), registered last.
@@ -518,9 +522,13 @@ class KaggricultureTransformer(
             ),
             dim=1,
         )
+        return x, self._observation_token_mask(obs)
+
+    def _observation_token_mask(self, obs: kt.KaggricultureObsBatch) -> torch.Tensor:
+        rows = obs.still_playing.numel()
         playing = obs.still_playing.reshape(rows, 1)
-        device = x.device
-        token_mask = torch.cat(
+        device = obs.still_playing.device
+        return torch.cat(
             (
                 obs.actor_mask.reshape(rows, -1),
                 torch.ones((rows, kt.TILES), dtype=torch.bool, device=device),
@@ -537,7 +545,44 @@ class KaggricultureTransformer(
             ),
             dim=1,
         )
-        return x, token_mask
+
+    @contextmanager
+    def rollout_packing(
+        self,
+        obs_host: kt.KaggricultureObsBatch,
+        *,
+        learner_mask: torch.Tensor | None = None,
+    ) -> Iterator[None]:
+        """Scope one rollout observation's host mask to its model forward.
+
+        The CPU mask owns a fresh concatenation, so the native environment may
+        reuse its observation buffers after this forward. Selection matches
+        ``forward_learner_rows``' flattened seat order. No mask survives exit,
+        including exceptions; update and teacher forwards keep normal packing.
+        """
+        if self._rollout_token_mask_cpu is not None:
+            raise RuntimeError("rollout_packing contexts cannot be nested")
+        if any(
+            field.device.type != "cpu"
+            for field in (
+                obs_host.actor_mask,
+                obs_host.shop_mask,
+                obs_host.still_playing,
+            )
+        ):
+            raise ValueError("rollout_packing requires CPU observation masks")
+        mask = self._observation_token_mask(obs_host)
+        if learner_mask is not None:
+            if learner_mask.device.type != "cpu" or learner_mask.dtype != torch.bool:
+                raise ValueError("rollout_packing learner_mask must be CPU bool")
+            if learner_mask.shape != obs_host.still_playing.shape:
+                raise ValueError("rollout_packing learner_mask shape must match seats")
+            mask = mask[learner_mask.reshape(-1)]
+        self._rollout_token_mask_cpu = mask
+        try:
+            yield
+        finally:
+            self._rollout_token_mask_cpu = None
 
     def _run_trunk(self, x: torch.Tensor, token_mask: torch.Tensor) -> torch.Tensor:
         """Isaiah's dispatch, guarded against the compiled-GEMM overflow."""
@@ -572,8 +617,8 @@ class KaggricultureTransformer(
             dim=0,
         )
 
-    @staticmethod
     def _run_packed_trunk(
+        self,
         trunk: Callable[
             [torch.Tensor, torch.Tensor | None, PackedSequence | None], torch.Tensor
         ],
@@ -587,6 +632,23 @@ class KaggricultureTransformer(
         overflow transfers its per-row token counts to plan the chunks.
         """
         rows, tokens = x.shape[:2]
+        host_mask = self._rollout_token_mask_cpu
+        if host_mask is not None:
+            if torch.is_grad_enabled():
+                raise RuntimeError("rollout_packing requires a no-grad rollout forward")
+            if host_mask.shape != token_mask.shape:
+                raise ValueError("rollout_packing host mask shape differs from forward")
+            if rows * tokens * width < _GEMM_ELEMENT_LIMIT:
+                packed_x, packed = pack_sequence_from_cpu_mask(x, host_mask)
+                return unpack_sequence(trunk(packed_x, None, packed), packed)
+            row_tokens = [int(n) for n in host_mask.sum(dim=1).tolist()]
+            outputs = []
+            for start, stop in packed_row_chunks(row_tokens, width=width):
+                packed_x, packed = pack_sequence_from_cpu_mask(
+                    x[start:stop], host_mask[start:stop]
+                )
+                outputs.append(unpack_sequence(trunk(packed_x, None, packed), packed))
+            return torch.cat(outputs, dim=0)
         if rows * tokens * width < _GEMM_ELEMENT_LIMIT:
             packed_x, packed = pack_sequence(x, token_mask, max_seqlen=tokens)
             return unpack_sequence(trunk(packed_x, None, packed), packed)
@@ -613,7 +675,7 @@ class KaggricultureTransformer(
         """Compile the blocks and final norm only; ``_run_trunk`` calls it.
 
         The overflow guard and chunking in ``_run_trunk`` stay in front of the
-        compiled callable; stems, heads and critic stay eager. Called directly
+        compiled callable; this does not compile stems, heads or critic. Called directly
         or through ``configure_model_compile``, it first claims the process's
         GEMM backends for Kaggriculture: the probed-stack check, then cuBLAS
         only (``COMPILED_GEMM_BACKENDS``); an Orbit claim raises.
@@ -621,6 +683,26 @@ class KaggricultureTransformer(
         claim_gemm_backends("kaggriculture")
         self._compiled_transformer_trunk = torch.compile(
             self._forward_transformer_trunk, mode=mode, dynamic=True
+        )
+        self.compiled_regions_require_gemm_backends = True
+        return 1
+
+    def compile_actor_heads(self, *, mode: str) -> int:
+        """Compile the grammar core, retaining eager RNG and head chunk guards.
+
+        The process claim and per-call check cover heads even with an eager
+        trunk. Static shapes suit rollout seat batches; other batch sizes and
+        replay/teacher modes specialize separately. Random exponential draws
+        stay eager to preserve sampling call order and RNG state.
+        """
+        if mode not in ("default", "max-autotune-no-cudagraphs"):
+            raise ValueError(
+                "actor heads require compile mode 'default' or "
+                "'max-autotune-no-cudagraphs'; CUDA graph modes are not qualified"
+            )
+        claim_gemm_backends("kaggriculture")
+        self._compiled_actor_core = torch.compile(
+            self.actor.policy_core, mode=mode, fullgraph=True, dynamic=False
         )
         self.compiled_regions_require_gemm_backends = True
         return 1
@@ -644,9 +726,9 @@ class KaggricultureTransformer(
         """Sample one grammar program per seat row.
 
         Sampling adds no policy-validation host synchronization: the replay
-        check runs only in ``evaluate_actions``. The encode is not sync-free;
-        packed trunk dispatch sizes its packing on the host and, for an
-        oversized batch, transfers per-row token counts to plan chunks.
+        check runs only in ``evaluate_actions``. By default, packed encoding
+        reads device mask values on the host. ``rollout_packing`` instead uses
+        the current host observation's mask, including overflow chunk planning.
         """
         self._require_stateless(hidden_state)
         encoded = self.encode_observations(obs)
@@ -1086,6 +1168,16 @@ class KaggricultureTransformer(
     ) -> GrammarPolicyResult:
         unit_input, market_input = self._actor_inputs(encoded, rows)
         core = self._compiled_actor_core or self.actor.policy_core
+        if self._compiled_actor_core is not None:
+            if self.compiled_regions_require_gemm_backends:
+                require_compiled_gemm_backends()
+            exponentials = (
+                sample_policy_exponentials(unit_input)
+                if tokens is None and not deterministic
+                else None
+            )
+        else:
+            exponentials = None
         return core(
             unit_input,
             market_input,
@@ -1102,6 +1194,7 @@ class KaggricultureTransformer(
                 else {slot: logits[rows] for slot, logits in teacher_logits.items()}
             ),
             collect_logits,
+            exponentials,
         )
 
     def _actor_inputs(

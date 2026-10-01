@@ -1,5 +1,60 @@
 # Change log
 
+## 2026-10-01 — Add four default-off Python rollout optimization switches
+
+The owner asked to carry out `ops/sps-2026-10-01/brief-python.md` completely.
+The [[references/rollout-optimizations-preserve-sampling-behind-default-off-switches|rollout optimization Reference]] records the implementation, checks and GPU limits.
+
+- **Changed.** `rl.compile_actor_heads` compiles the grammar core with the
+  existing GEMM claim and eager RNG draws; `rl.rollout_packing` builds exact
+  packed metadata from current CPU observations; `rl.pinned_action_d2h` reuses
+  pinned buffers and fences one event before native consumption;
+  `env.skip_reward_telemetry_validation` skips duplicate finite scans of
+  native-validated banks. All default false and serialize no false key. No
+  preset, Rust code, reward formula, model parameter or remote machine changed.
+- **Checks.** Base `b2276bc5` native/trainer digests and all existing config
+  hashes reproduce exactly. CPU Inductor sampling/replay/backward parity and
+  two-update canonical PPO parity pass; full Python suite: 3,071 passed,
+  11 skipped. Ruff, mypy (78 files), Python 3.11 syntax and mapped docs pass.
+  Native prepare checks and the isolated CPU benchmark are receipted in the
+  [report](../ops/sps-2026-10-01/report-python.md).
+- **Records.** Added the portable W&B-free benchmark, verification plan and
+  report; updated README, model architecture, RL API, the cuBLAS-only Decision
+  and its index. The training board is unchanged: this adds no trained result.
+- **Limits.** Real CUDA packing/DMA and compiled BF16 heads, static variants,
+  multi-rank behavior and complete-update speed remain for the diagnostic
+  H200. Component CPU timing is not a live-recipe SPS claim.
+
+## 2026-10-01 — Parallelize native step preparation/publication and reuse transactional staging
+
+The owner requested full execution of `ops/sps-2026-10-01/brief-native.md`. The
+[[references/native-game-semantics-use-v3-owned-buffers|native lifecycle Reference]]
+and its index now record worker-side admission/decode, one transactional game
+clone, reused private staging, parallel caller-row publication and worker-side
+old-game destruction. Engine custody pins the narrow API extraction; the rules
+body, RNG, rewards, grammar, trainer and recipe remain unchanged. New parity and
+failure tests cover the pristine-base 1,440-step/4-env golden, 1/4/8 threads,
+reversed execution order, truncation, error priority and abandoned transactions.
+Full direct preparation checks pass (413 Rust, five ignored; 3,016 Python, nine skipped,
+plus format/lint/type/docs/custody checks). Copied launcher paths were corrected
+and Python qualification repeated with an in-process source assertion. An
+inherited import-time watchdog test budget expired during the full suite;
+per-test invocation budgets and an expired-before-launch regression repair test
+isolation without changing the production timeout. All three Mac native timing
+series are retained, including two losses in five alternating pairs; host drift
+prevents a stable speedup claim. Exact Mac native-step before/after
+timing, changed-path inventory, Git-metadata publication restriction and limits
+are in `ops/sps-2026-10-01/report.md`. No H200 measurement, full-update SPS
+claim, training run, remote access or push is part of this change.
+
+## 2026-10-01 — Add NVIDIA driver 570.211.01 (H200) to the probed compile stack
+
+Owner, verbatim: "please setup this 8-gpu pod real quick and notice increased vram & h200." and "Keep the current recipe". The new 8×H200 pod runs driver 570.211.01, which `check_compile_stack` rejected, so the recipe could run compiled only after the ATEN-only A/B was repeated there.
+- **Run.** The correctness half and the template census of the ATEN-only GEMM A/B ran on H200 GPU 0 (sm_90) at `07c8fc9` (torch 2.9.0+cu128, triton 3.5.0, flash-attn 2.8.3), 17:01–17:04Z on 2026-09-30. Every ATEN stage passed: the real packed trunk up to 8,387,470 tokens had 0 wrong tokens; the Linear and MLP fwd/bwd probes had 0 bad rows. The ATEN caches had 0 `triton_tem_`. The default-backend Linear control reproduced the autotune illegal memory access. Run statement, outputs and adaptations: `ops/h200-driver-gate-2026-10-01/`.
+- **Changed.** `KAGGRICULTURE_PROBED_COMPILE_STACK.nvidia_drivers` is now `("595.91.07", "570.211.01")` in `python/owl/model/compile_gemm.py`. The constant test pins both, and a new test accepts either driver alone or both together. `tests/kaggriculture/conftest.py` stands in a single-driver host. The README names both drivers. The [[decisions/kaggriculture-compiles-gemms-with-cublas-only|cuBLAS-only Decision]] gains the H200 evidence and limits, and the decisions index is updated.
+- **Checks.** `uv run pytest tests/kaggriculture tests/scripts/test_run_ppo.py tests/owl/train/test_config.py`: 1,688 passed, 4 skipped (Mac, CPU). Ruff (check and format) and mypy pass on the touched Python files. `scripts/check_doc_freshness.py` flagged `docs/model-architecture.md`; it names no driver version, so it passes with `DOCS_CURRENT=1`.
+- **Not measured.** H200 timing, the default-backend trunk control, the real-trunk backward above the bound, GPUs 1–7 individually and multi-rank runs. `configs/kaggriculture_1gpu_eager.yaml` still names 595.91.07 in a historical comment (A100 pod), left unchanged.
+
 ## 2026-10-01 — Package the 60M checkpoint with rule 1 baked on (not submitted)
 
 Owner, verbatim: "you can package, but not need to submit 60m".

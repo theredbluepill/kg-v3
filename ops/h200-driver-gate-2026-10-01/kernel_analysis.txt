@@ -1,0 +1,41 @@
+== aten_lin_512_256: 2 wrappers, 0 distinct template variants
+   wrapper inductor_cache/aten_lin_512_256/g3/cg33ymcly6qrlgwbbfp4adfyacr7ou4uopslrkney3a4zrllx5rm.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/aten_lin_512_256/th/cthg7itxmy6rb7y43zfkpovlq7cai445ubgkoux766atremy5qpi.py
+      extern GEMM calls: ['bias_addmm']
+== aten_lin_768_256: 2 wrappers, 0 distinct template variants
+   wrapper inductor_cache/aten_lin_768_256/t7/ct7ayvqyyndyhpncuzpazzhlcwaj6cvadd3emv6a5bc3o5zjrwbd.py
+      extern GEMM calls: ['bias_addmm']
+   wrapper inductor_cache/aten_lin_768_256/y2/cy2kk424cnyyjrwinroeyyqsgztftyz5fjthjtnvnzigxx3pcxo4.py
+      extern GEMM calls: ['addmm']
+== aten_mlpbwd_256_512_256: 6 wrappers, 0 distinct template variants
+   wrapper inductor_cache/aten_mlpbwd_256_512_256/b4/cb456asmcq77ynuc3rypdob6bwb72lbmsh5f2bkbqpjresmggfum.py
+      extern GEMM calls: ['bias_addmm', 'bias_addmm']
+   wrapper inductor_cache/aten_mlpbwd_256_512_256/gz/cgziindxzvsvqhjtuvxykflrpy26wiyeok57jsntti3j2yq56rel.py
+      extern GEMM calls: ['mm', 'mm', 'mm', 'mm']
+   wrapper inductor_cache/aten_mlpbwd_256_512_256/pf/cpfbm2kbw2goqetkel2d5hcy4qlm55tbe6gbsxgvrqjjpftrikdw.py
+      extern GEMM calls: ['bias_addmm', 'bias_addmm']
+   wrapper inductor_cache/aten_mlpbwd_256_512_256/sp/cspziq6rttmvuhnvobsoh52idbug2knooiyd77ls7tjooku5av5m.py
+      extern GEMM calls: ['mm', 'mm', 'mm', 'mm']
+   wrapper inductor_cache/aten_mlpbwd_256_512_256/xt/cxt5ipzryj3bh5dpt37gbpicznpjxgmr22hge2mg4f72w3k44erw.py
+      extern GEMM calls: none
+   wrapper inductor_cache/aten_mlpbwd_256_512_256/yt/cyt46mkqurdmficp5fuledhcuafvxo7ceapkthes7iuqojbajd32.py
+      extern GEMM calls: none
+== aten_trunk_packed_bypass: 2 wrappers, 0 distinct template variants
+   wrapper inductor_cache/aten_trunk_packed_bypass/66/c66my2z5m4zcvolmz2nz3s2zhyudaaen6iqacc5m4hx7i634qkxn.py
+      extern GEMM calls: ['bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm']
+   wrapper inductor_cache/aten_trunk_packed_bypass/xg/cxgigoftptburuzxguemj4caxm24pic7muqveds23aslo43jgxjq.py
+      extern GEMM calls: ['bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'bias_addmm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm', 'mm']
+== ctl_default_lin_768_256: 2 wrappers, 1 distinct template variants
+   wrapper inductor_cache/ctl_default_lin_768_256/3b/c3bmf43zff7hlvk5zpye6vvdyggn75hj57vpkka56256qdmbytfy.py
+      extern GEMM calls: none
+      template x1 triton_tem_fused__to_copy_addmm_t_3: ks0=i32 INDEX_DTYPE=int32 A-load 768*idx_m, store 256*idx_m
+   wrapper inductor_cache/ctl_default_lin_768_256/yu/cyuvebdtij5luhewuheqe6wto6y5xc3anvtsw36pfmoijh5z6p2y.py
+      extern GEMM calls: ['bias_addmm']
+   variant triton_tem_fused__to_copy_addmm_t_3 sig={'in_ptr0': '*bf16', 'arg_A': '*bf16', 'arg_B': '*bf16', 'out_ptr0': '*bf16', 'ks0': 'i32'}  [3 file(s)]
+      INDEX_DTYPE : tl.constexpr = tl.int32
+      xindex = idx_n + 768*idx_m
+      a = tl.load(A + (xindex))
+      xindex = idx_n + 256*idx_m
+      b = tl.load(B + ((tl.broadcast_to(idx_m + 768*idx_n, xindex.shape)).broadcast_to(xindex.shape)))
+      xindex = idx_n + 256*idx_m
