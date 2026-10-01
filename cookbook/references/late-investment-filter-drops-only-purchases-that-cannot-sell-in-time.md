@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Late-investment filter drops only purchases that cannot sell in time"
-description: "Rule 2, merged into kg/submit-08bc at 31c99619 beside rule 1: an off-by-default post-decode filter in the packaged Kaggle agent replaces each BUY_SEED, BUY_ANIMAL, BUY_LAND or HIRE order with the empty market command only when no play could turn it into a sale by the last processed action (step episodeSteps - 2). Thresholds come from the Kaggle engine and engine_rs with line citations; at the default 720/24 configuration the first dropped steps are WHEAT/CARROT 671, TOMATO 527, STRAWBERRY/MELON 479, animals 694, land 695, hires 717 plus hour 23 of every day. Scripted plays in the Kaggle engine sell each last allowed purchase before the end. SELL, BUY_PRODUCT and unit actions are never touched. On c50 over 48 paired fixed-shop games with rule 1 also on, it blocked 24 late BUY_SEED WHEAT orders in 16 games with 0 errors or fallbacks and no win change, and the margin change against rule 1 alone was -1 +/- 21 per game (8 games better, 8 worse, the rest identical), so it stays off by default."
+description: "Rule 2, merged into kg/submit-08bc at 31c99619 beside rule 1: an off-by-default post-decode filter in the packaged Kaggle agent replaces each BUY_SEED, BUY_ANIMAL, BUY_LAND or HIRE order with the empty market command only when no play could turn it into a sale by the last processed action (step episodeSteps - 2). Thresholds come from the Kaggle engine and engine_rs with line citations; at the default 720/24 configuration the first dropped steps are WHEAT/CARROT 671, TOMATO 527, STRAWBERRY/MELON 479, animals 694, land 695, hires 717 plus hour 23 of every day. Scripted plays in the Kaggle engine sell each last allowed purchase before the end. SELL, BUY_PRODUCT and unit actions are never touched. On c50 over 48 paired fixed-shop games with rule 1 also on, it blocked 24 late BUY_SEED WHEAT orders in 16 games with 0 errors or fallbacks and no win change, and the margin change against rule 1 alone was -1 +/- 21 per game (8 games better, 8 worse, the rest identical), so it stays off by default. Final status (sprint end, 2026-09-30 23:59Z): never shipped. The owner said \"let's not apply rule2.\", and every sprint package (60M, 90M, 170M, 210M) records rule 2 as environment (off); Kaggle sets no such variable."
 tags: ["kaggriculture-v3", "adaptation", "kaggle-runtime", "action-filter"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -14,6 +14,12 @@ sources:
   - resource: "repository:ops/late-invest-2026-10-01/merge-checks.log"
   - resource: "repository:ops/late-invest-2026-10-01/ab-rule2/ab-rule2.md"
   - resource: "repository:ops/late-invest-2026-10-01/ab-rule2/ab_rule2_tables.md"
+  - resource: "user-directive:2026-10-01:60m-is-close-use-rule1-rule2-locally-then-lets-not-apply-rule2"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/eval-60M/README.md"
+  - resource: "repository:ops/package-60m-2026-10-01/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/90M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/170M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/210M-ft-on/package/PACKAGE.md"
   - resource: "repository:python/owl/kaggriculture/final_turn.py"
   - resource: "repository:engine_rs/src/lib.rs"
   - resource: "repository:pyproject.toml"
@@ -60,5 +66,6 @@ Five threshold mutations were each killed. The last one survived until the 699-s
   - Wins stayed 6-42. The margin change against rule 1 alone was −1 ± 21 per game (SE over 8 seeds): 8 games better, 8 worse (as low as −220), the rest identical.
   - The direct saving is the seed price, 10 per block, or about 5 per game. The larger swings come from trajectory divergence: the opponent bank also moved in 14 of the 16 games.
   - The recommendation to the main agent is to leave it off by default and re-test it on a policy that makes large late purchases. c50 exercised only the wheat branch in games.
-- **Not in any shipped package.** A local macOS package (`pkg-c50-r12`) was staged for the A/B only. `package_checkpoint.sh` was not run, and no Kaggle submission includes the filter. Submission remains the owner's decision.
+- **Final status: never shipped.** After the c50 A/B, the owner said, verbatim, "let's not apply rule2." (in the exchange that also asked for the 60M rule check: "60M is close, you can use rule1/rule2 to evaluate that locally as well."). The 60M comparison therefore tested rule 1 only. A local macOS package (`pkg-c50-r12`) was staged for the c50 A/B and nothing else. Every sprint package (60M, plus the submitted 90M, 170M and 210M) records "rule 2 late-investment filter: environment (off)". No Kaggle submission includes the filter. The code stays in the tree, off by default.
+- **Reopen when** a policy makes large late purchases that this filter would block (c50 exercised only the wheat branch), and the owner asks to re-test it.
 - **Legality only.** The filter checks legality and timing, not affordability or holdings. A purchase that could still pay back in principle is kept, even when the agent will never use it.

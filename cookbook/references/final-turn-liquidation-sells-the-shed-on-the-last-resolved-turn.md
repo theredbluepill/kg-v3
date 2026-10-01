@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Final-turn liquidation sells the shed on the last resolved turn"
-description: "Adaptation and paired check, 2026-10-01. kg/submit-08bc 4c99768a adds an optional, default-off stateless rule to the Kaggle agent (KAGGRICULTURE_FINAL_TURN_LIQUIDATION=1). On observation step episodeSteps-2 it DROPs product carriers on shed tiles and replaces the market with one SELL per product for the full shed (plus dropped units), dropping BUY/HIRE. On c50, fixed-shop engine, 48 paired games vs smaller_market_shock, cha22 and v56 (8 seeds x 2 seats): 0 errors or fallbacks, play identical before step 718 in all 48, shed emptied in all 48, margin +874 ± 157 per game (SE over 8 seeds), no game worse, 0 of 42 losses flipped. About 11 carried and 11 tile units per game stay unsold. Packages keep the rule off unless built with --final-turn-liquidation (kg/package-60m), which bakes it on in the packaged main.py only; rule 2 stays on its env switch. The 60M package (7b72346f…8db9) was built that way and emptied the shed at step 718 in a full Kaggle-image game; not submitted."
+description: "Adaptation and paired check, 2026-10-01. kg/submit-08bc 4c99768a adds an optional, default-off stateless rule to the Kaggle agent (KAGGRICULTURE_FINAL_TURN_LIQUIDATION=1). On observation step episodeSteps-2 it DROPs product carriers on shed tiles and replaces the market with one SELL per product for the full shed (plus dropped units), dropping BUY/HIRE. On c50, fixed-shop engine, 48 paired games vs smaller_market_shock, cha22 and v56 (8 seeds x 2 seats): 0 errors or fallbacks, play identical before step 718 in all 48, shed emptied in all 48, margin +874 ± 157 per game (SE over 8 seeds), no game worse, 0 of 42 losses flipped. About 11 carried and 11 tile units per game stay unsold. Packages keep the rule off unless built with --final-turn-liquidation (kg/package-60m), which bakes it on in the packaged main.py only; rule 2 stays on its env switch. The 60M package (7b72346f…8db9) was built that way and emptied the shed at step 718 in a full Kaggle-image game; not submitted. Final status (sprint end, 2026-09-30 23:59Z): rule 1 shipped baked on in all three sprint submissions (90M 56716929, 170M 56720629, 210M 56722061); only the earlier 08bc probe (56711278) ran without it. On 60M, a second paired check gave +870 ± 242 per game, 8/8 seeds better, 4 losses turned to wins and none reversed."
 tags: ["kaggriculture-v3", "adaptation", "kaggle-runtime", "evaluation", "finding"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-10-01"}
@@ -25,6 +25,16 @@ sources:
   - resource: "repository:ops/submit-08bc-2026-09-30/final-turn-ab/ab_tables.md"
   - resource: "repository:ops/submit-08bc-2026-09-30/final-turn-ab/run_fixedshop_ft.sh"
   - resource: "repository:ops/submit-08bc-2026-09-30/final-turn-ab/pkg-c50-ft-manifest.json"
+  - resource: "user-directive:2026-10-01:60m-is-close-use-rule1-rule2-locally-then-lets-not-apply-rule2"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/eval-60M/README.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/eval-60M/eval60m_tables.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/90M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/170M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/210M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/submit-90m-2026-10-01/receipt.md"
+  - resource: "repository:ops/submit-170m-2026-10-01/receipt.md"
+  - resource: "repository:ops/submit-210m-2026-10-01/receipt.md"
+  - resource: "repository:ops/sprint-2026-09-30/sprint-facts.md"
   - resource: "local-untracked:~/kg-v3-int/ops/earn-money-2026-09-30/anchor-games/games-fixedshop/c50-ft-on"
   - resource: "local-untracked:~/kg-v3-int/ops/earn-money-2026-09-30/anchor-games/games-fixedshop/c50"
   - resource: "local-untracked:~/kg-v3-int/engine_rs/src/lib.rs"
@@ -67,6 +77,14 @@ Owner decisions: rule 1 is to be applied, and "let's not apply rule2."; for the 
 - Limit: the 40-turn Kaggle-image episode never reaches step 718. Only a `--full-episode` run exercises the baked rule in the image.
 - **60M package** (`ops/package-60m-2026-10-01/`). Built from `de26cd68` with `--full-episode --final-turn-liquidation`: `submission.tar.gz` sha256 `7b72346f…8db9`, 24,725,520 bytes; checkpoint `20b1f795…1a2`, 210/210 tensors equal; clean native module `3e5e4e55…` (no fixed opponents). The strict 720-turn self-play episode in the local Kaggle image qualified: 719 calls per seat, 0 exceptions, invalid actions or default passes, steady p99 about 0.6 s emulated. On observation step 718 both seats sold the full shed (CARROT 7, WHEAT 22, FERTILIZER 4, MILK 11, highest price first) and the shed ended at 0; a carried CARROT 3 off the shed tiles stayed unsold. One self-play game is a wiring check, not a strength or A/B result. Not submitted.
 
+## Final status at the end of the sprint (2026-09-30 23:59Z)
+
+- **Shipped on in every sprint submission.** The 90M, 170M and 210M archives were each built with `scripts/package_checkpoint.sh --final-turn-liquidation`. Each `PACKAGE.md` reads "rule 1 final-turn liquidation: baked on; rule 2 late-investment filter: environment (off)". The submissions were 90M (ref 56716929, `5e460d20…`), 170M (56720629, `428a63d7…`) and 210M (56722061, `45efe071…`); the receipts are in `ops/submit-*-2026-10-01/receipt.md`. The earlier 08bc probe submission (56711278) predates the rule and ran without it. The owner's per-submission approvals are in the [[../decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|submission Decision]].
+- **Second paired check, 60M** (`ops/sprint-2026-09-30/anchor-games/eval-60M/`). The owner asked for it ("60M is close, you can use rule1/rule2 to evaluate that locally as well."), then said "let's not apply rule2.", so only rule 1 was compared. Same panel design as the c50 A/B. The margin change was +870 ± 242 per game, with all 8 seeds better and every game between +15 and +2,194. W-L went from 4-44 to 8-40: 4 losses became wins and no win became a loss.
+- **Every sprint panel ran with rule 1 on.** The Linux CPU-pod panels for 60M to 210M played the packaged archive with rule 1 baked on. For 90M, 170M and 210M, that archive is the one submitted. Those panels measure the checkpoint plus rule 1, not the checkpoint alone.
+- **Ladder counterfactual.** The sprint fact sheet records that, applied to the 08bc ladder games, the rule would have turned 2 of 7 losses into wins (11-7 to 13-5). This is an offline counterfactual, not replayed play.
+- No ladder episode of a rule-1 submission was analysed before the sprint closed.
+
 ## Evidence
 
 - **Unit tests** (`tests/kaggriculture/test_final_turn.py`, 11 tests) cover:
@@ -100,8 +118,8 @@ Owner decisions: rule 1 is to be applied, and "let's not apply rule2."; for the 
 
 ## Limits
 
-- One checkpoint, one local engine variant (fixed shop), three anchors and eight seeds; mirrored seat pairs are often identical games.
-- No Kaggle ladder or official-engine games were played with the rule.
+- Two checkpoints (c50, 60M), one local engine variant (fixed shop), three anchors and eight seeds; mirrored seat pairs are often identical games.
+- The rule shipped to the Kaggle ladder in three submissions, but no ladder or official-engine A/B with the rule exists. Ladder scores do not separate the rule from the checkpoint.
 - p4 (08bc), f610 and 60f2 were not re-run.
 - Mac host, not Kaggle hardware.
 - No W&B run: this local harness has no telemetry.

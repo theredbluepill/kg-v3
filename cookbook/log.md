@@ -1,5 +1,49 @@
 # Change log
 
+## 2026-10-01 — Record the final sprint: result episode, owner Decisions, throughput finding and the re-dated board
+
+The owner asked, verbatim: "please record pending knowledge into the cookbook after eval is done". Earlier: "直接關掉吧，不過類似東西在結束後，我們總結進cookbook." ("just shut it down, but after it ends, summarize things like this into the cookbook").
+
+- **Added: the result episode.** [[references/the-final-sprint-took-720-turn-self-play-from-c50-to-a-48-0-anchor-panel|Final-sprint episode]], closed.
+  - Recipe 0.30/0.30/0.01/0.30, 720-turn λ 1, Muon 1e-4.
+  - Five W&B runs from c50 to 210M, with promotions and checkpoint shas.
+  - The 48-game fixed-shop panel trajectory: 6-42 (−7.2k) → 48-0 (+7.51k), with paired deltas.
+  - The three owner-agreed submissions and custody.
+- **Added: three owner Decisions, each quoting the owner.**
+  - [[decisions/promote-and-relaunch-on-anchor-panel-evidence|Anchor-panel promotion]] ("let anchors speak will be good"). The owner hand-promoted 90M, 100M and 130M. The LR stayed at 1e-4. Self-play and the panel disagreed at 60M and 120M.
+  - [[decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|Submission slots]] ("do not spend submission slot unless we agreed tgt."). Four submissions, 08bc, 90M, 170M and 210M, each with its own quote; 60M was not submitted.
+  - [[decisions/keep-the-sprint-in-pure-self-play-without-pfsp-or-lambda-scheduling|Pure self-play]]. The owner declined the PFSP league and λ scheduling; both remain untested future options.
+- **Added: the throughput finding.** [[references/clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput Reference]].
+  - SCHED_IDLE clock keepers: ~3,650 → ~5,250 env steps/s with no code change. Spinning only part of the CPUs was worse.
+  - The native parallel step with compiled heads: ~8,300 env steps/s.
+  - The 1x H200 diagnostic arms, the compiled-head GPU parity, and a pre-existing finding that bf16 logp depends on batch shape.
+- **Revised.**
+  - [[references/a-long-credit-window-turned-bc-start-self-play-from-sliding-to-improving|Credit window]]: continuation through 210M; the "every policy still loses" limit is scoped to the earlier harness; still provisional.
+  - [[references/final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|Rule 1]]: shipped baked on in 90M, 170M and 210M; on 60M, +870 ± 242 per game.
+  - [[references/late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|Rule 2]]: never shipped.
+  - [[references/kaggle-packaging-reuses-the-starter-submission-path|Packaging]]: sprint use; each submitted archive is the one its panel played.
+  - The [[references/rollout-optimizations-preserve-sampling-behind-default-off-switches|rollout-switch]] and [[references/native-game-semantics-use-v3-owned-buffers|native]] References: H200 evidence and review conditions.
+  - The [[references/ppo-trainer-seams-map-any-schema-and-alarm-on-replay-drift|replay-drift alarm]] limit: now cites the measured bf16 replay noise.
+- **Board.** The [[decisions/the-kaggriculture-v3-board|board]] is re-dated 2026-10-01.
+  - Option 1 is pulled, and the panel is the yardstick.
+  - PFSP is option 2.
+  - New scoped tombstones: λ scheduling, rule 2 and the LR change.
+  - It links the three new Decisions.
+  - The prior version is preserved at `07c8fc99` (sha256 `712f64fa…1e9b`).
+  - Length: 11,880 UTF-16 units.
+- **Indexes.** The decisions and references indexes are updated. The root index points to the episode.
+- **Checks.**
+  - Hook-mode `cookbook-lint.mjs` passes on every changed note, and every `repository:` source exists on `kg/sprint-final`.
+  - `--staged-sources --require-log` ran in the pre-commit hook.
+  - `scripts/check_doc_freshness.py` was run.
+  - The diagnostic medians were re-derived with `summ.py` from the archived logs.
+- **Gaps.**
+  - One training seed and a selection panel.
+  - No ladder scores or ranks are recorded for 90M, 170M or 210M.
+  - The `r4zqqs49` log and receipts were lost; the 80M package receipt was not archived.
+  - The manual promotions have no per-checkpoint owner quote.
+  - No Nsight capture.
+
 ## 2026-10-01 — Add four default-off Python rollout optimization switches
 
 The owner asked to carry out `ops/sps-2026-10-01/brief-python.md` completely.

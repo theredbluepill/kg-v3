@@ -1,11 +1,13 @@
 ---
 type: "Reference"
 title: "Native game semantics use v3-owned buffers"
-description: "The 2026-10-01 native SPS refinement parallelizes admission/decode/publication, reuses staging and advances one transactional game clone; a pristine-base 1,440-step golden matches at 1/4/8 threads. Mac component timing and checks are in ops/sps-2026-10-01/report.md; H200/complete-update speed is unmeasured. Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Since the Task 3.1 remainder (15ea55f) the canonical trainer and policy evaluation consume the adapter on CPU; the pod DMA fence test and the early two-rank smoke remain pending."
+description: "The 2026-10-01 native SPS refinement parallelizes admission/decode/publication, reuses staging and advances one transactional game clone; a pristine-base 1,440-step golden matches at 1/4/8 threads. Mac component timing and checks are in ops/sps-2026-10-01/report.md. On a 1x H200 training diagnostic in the final sprint (2026-09-30) the native step alone gave +23% (1,034 vs 840 env steps/s), and with compiled actor heads it ran live on 8x H200 at ~8,300 env steps/s (see the H200 throughput Reference). Task 1.4 adds the transactional native lifecycle, checked seed streams, rewards and codec/table bindings (16-game TrainingBatch oracle bit-exact, release overflow proof on the pod). Task 1.5 wires the typed adapter, one-buffer entry fence, factory, codec and strict native grammar tables to that binding with no missing-binding skip left; full just prepare passes. Since the Task 3.1 remainder (15ea55f) the canonical trainer and policy evaluation consume the adapter on CPU; the pod DMA fence test and the early two-rank smoke remain pending."
 tags: ["kaggriculture-v3", "adaptation"]
 status: "verified-scoped"
-generated: {"by": "openai/codex; earlier revisions by anthropic/claude-opus-5-5", "at": "2026-10-01"}
+generated: {"by": "openai/codex; earlier and sprint revisions by anthropic/claude-opus-5-5", "at": "2026-10-01"}
 sources:
+  - resource: "repository:ops/sprint-2026-09-30/sprint-facts.md"
+  - resource: "repository:ops/sprint-2026-09-30/throughput/sps-diag-evidence/summ.py"
   - resource: "repository:ops/sps-2026-10-01/brief-native.md"
   - resource: "repository:ops/sps-2026-10-01/code-map.md"
   - resource: "repository:ops/sps-2026-10-01/run-statement.md"
@@ -212,6 +214,16 @@ update SPS. The snapshot still clones private inventories and grammar still uses
 JSON. No remote host, learner or driver was touched. Reopen performance claims
 with an equivalent full-update H200 measurement; use Nsight for any CUDA timeline
 attribution.
+
+The final sprint (2026-09-30) took that H200 measurement in a training
+diagnostic, not with Nsight. On 1x H200 (single rank, keepers on), the median
+env steps/s over iterations 2–7 was 840 at baseline and 1,034 with the native
+step alone (+23%). With `rl.compile_actor_heads` it was 1,263. Codex's bitwise
+parity against the `b2276bc5` golden held at 1, 4 and 8 threads. Live on
+8x H200 with compiled heads, the recipe ran at about 8,300 env steps/s, and its
+training curves matched the old code. Details, the clock-keeper confound and
+the limits are in the
+[[clock-keepers-native-parallel-step-and-compiled-heads-lifted-h200-rollout-throughput|H200 throughput Reference]].
 
 ## Task 1.5 Stage 2 — adapter on the real binding
 

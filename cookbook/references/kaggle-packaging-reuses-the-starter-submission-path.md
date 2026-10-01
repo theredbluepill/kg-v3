@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Kaggle packaging ships the BC agent as a native, validated tarball"
-description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Branch kg/submit-08bc merges the ship path onto main 07c8fc99 so PPO run configs with the bank/margin reward-shaping keys load; the manifest now records only the checkpoint file name; a strict 5-turn Mac load of PPO checkpoint 08bc19ae passed. scripts/package_checkpoint.sh now packages a checkpoint from the Mac in about 28 s: it reuses the cached 08bc Linux module only while native sources equal its source commit 9a743fad, verifies hashes and every model tensor, and runs a 40-turn strict Kaggle-image episode. The 08bc module had the fixed-opponent controllers compiled in (default cargo features) and 08bc shipped it; the cache now holds a --no-default-features rebuild (3e5e4e55, 3.5 MB, no opponent strings, glibc max 2.35), with which the 50M checkpoint packaged and passed the 40-turn Kaggle-image episode without --allow-fixed-opponents."
+description: "Task 7.4 ship build on kg/rebuild-7-4-ship: a 24.7 MB submission.tar.gz with main.py, owl, a pod-built CPython 3.11 abi3 x86-64 rs.abi3.so (GLIBC_2.35 max) and the slim BC best (fd854587...6f51). It encodes one seat with the training write_seat, runs a greedy CPU fp32 forward at 1 thread, decodes natively, and returns PASS on a caught fault. Strict local episodes qualified with 719 calls per seat and zero faults, once in a fresh Kaggle-image container under emulation and twice on the pod. Three more episodes in Kaggle mode (non-strict, fallback live) in a fresh pod venv also passed with zero faults and zero fallbacks: BC against starter in each seat, and self-play through the kaggle-environments CLI. Not submitted. Deviates from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Branch kg/submit-08bc merges the ship path onto main 07c8fc99 so PPO run configs with the bank/margin reward-shaping keys load; the manifest now records only the checkpoint file name; a strict 5-turn Mac load of PPO checkpoint 08bc19ae passed. scripts/package_checkpoint.sh now packages a checkpoint from the Mac in about 28 s: it reuses the cached 08bc Linux module only while native sources equal its source commit 9a743fad, verifies hashes and every model tensor, and runs a 40-turn strict Kaggle-image episode. The 08bc module had the fixed-opponent controllers compiled in (default cargo features) and 08bc shipped it; the cache now holds a --no-default-features rebuild (3e5e4e55, 3.5 MB, no opponent strings, glibc max 2.35), with which the 50M checkpoint packaged and passed the 40-turn Kaggle-image episode without --allow-fixed-opponents. In the final sprint the same packager, with --final-turn-liquidation, built the CPU-pod panel packages from 60M to 210M (clean module, verified, Kaggle-image episode qualified in each archived receipt) and the three owner-agreed submissions, 90M, 170M and 210M, whose panels played the identical archives."
 tags: ["kaggriculture-v3", "adaptation", "packaging", "kaggle-runtime"]
 status: "verified-scoped"
 generated: {"by": "anthropic/claude-opus-5-5", "at": "2026-09-30"}
@@ -44,6 +44,13 @@ sources:
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/core.py"
   - resource: "uv-cache:kaggle_environments-1.32.7/kaggle_environments/envs/kaggriculture/kaggriculture.json"
   - resource: "kaggle-mcp:competitions/kaggriculture/pages"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/cpu-pod/eval_ckpt.sh"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/90M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/170M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/210M-ft-on/package/PACKAGE.md"
+  - resource: "repository:ops/submit-90m-2026-10-01/receipt.md"
+  - resource: "repository:ops/submit-170m-2026-10-01/receipt.md"
+  - resource: "repository:ops/submit-210m-2026-10-01/receipt.md"
 ---
 
 # Kaggle packaging ships the BC agent as a native, validated tarball
@@ -335,6 +342,37 @@ Limits: the module was not built inside Kaggle's image, and it is not
 stripped. The ymm (AVX2) lines were not traced to crates. Only 40 of 720 turns
 ran. The old module's `.so` stays in the Mac cache for custody. Nothing was
 uploaded or submitted.
+
+## Sprint use (2026-09-30/10-01)
+
+During the final sprint the packager built the archive for each checkpoint
+that the CPU-pod anchor panel played. Package receipts are archived for 60M,
+70M, 90M, 100M, 110M, 120M, 130M, 170M, 180M, 190M, 200M and 210M. The 80M
+package receipt was not copied, but its game receipts were. The panel harness `ops/sprint-2026-09-30/anchor-games/cpu-pod/eval_ckpt.sh`
+called `scripts/package_checkpoint.sh --final-turn-liquidation`, and each
+`package/PACKAGE.md` is under
+`ops/sprint-2026-09-30/anchor-games/games-fixedshop-linux/<ckpt>-ft-on/`.
+
+Every archived receipt shows the clean module `3e5e4e55…` (no
+fixed-opponent controllers). Each was verified: all files were re-hashed and
+210/210 tensors were equal. Each passed the default 40-turn strict
+Kaggle-image episode. Only 60M also ran the 720-turn `--full-episode` game
+(`ops/package-60m-2026-10-01/`).
+
+Three sprint archives were submitted, each with the owner's agreement:
+
+| Checkpoint | Ref | Archive sha256 | Panel on the same archive |
+| --- | --- | --- | --- |
+| 90M | 56716929 | `5e460d20…` | 48/48 qualified |
+| 170M | 56720629 | `428a63d7…` | 48/48 qualified |
+| 210M | 56722061 | `45efe071…` | 48/48 qualified |
+
+Each panel's game receipts name the same package hash prefix as the archive
+that was submitted. The receipts are `ops/submit-{90m,170m,210m}-2026-10-01/receipt.md`.
+The submission rule and its outcome are in the
+[[../decisions/spend-kaggle-submission-slots-only-on-owner-agreed-checkpoints|submission Decision]].
+None of the three ran the 720-turn Kaggle-image game; the 48 full panel games
+on the Linux CPU pod are their full-length evidence.
 
 ## Deviations from the approved brief
 
