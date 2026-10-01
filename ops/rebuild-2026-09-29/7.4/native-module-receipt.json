@@ -1,0 +1,16 @@
+{
+  "built_on": "RunPod pod abl4mvr5w1mmn4, /root/ship (CPU only; no GPU use)",
+  "built_utc": "2026-09-30T02:05:31Z..2026-09-30T02:06:39Z",
+  "source_commit": "f66acf843c57a4510b7968f59a79d44f5774321d",
+  "source_tree": "13bc592a742f00e1fb8b4db6477f51c1c0bcd1ea",
+  "source_tree_clean": true,
+  "script": "ops/rebuild-2026-09-29/7.4/pod-native-build.sh (CARGO_BUILD_JOBS=8; whether the outer call used nice -n 19 is not recorded)",
+  "toolchain": {"rustc": "1.97.0-nightly (e9e32aca5 2026-04-17)", "cargo": "1.97.0-nightly (eb94155a9 2026-04-09)", "maturin": "1.15.0", "python": "CPython 3.11.13 (uv venv /root/ship/venv)"},
+  "host_glibc": "2.39 (Ubuntu 24.04)",
+  "attempt1": "maturin --compatibility manylinux_2_28 refused: GLIBC_2.29..2.35 symbols (pod-native-build-attempt1.log)",
+  "attempt2": "maturin --compatibility linux (pod-native-build.log), release profile reused",
+  "wheel": {"name": "owl-0.1.0-cp311-abi3-linux_x86_64.whl", "sha256": "2299fda6723f2c437cadebdbd9fe16f88a23bab7e40100ea81e42642dc125300"},
+  "module": {"path": "owl/rs.abi3.so", "bytes": 3477136, "sha256": "3558c26f435616f1ce1211a9a7abc91c041068bc00b142d1f15eed4865375530", "elf": "ELF64 LSB x86-64 shared object, not stripped", "glibc_symbol_max": "2.35"},
+  "runtime_glibc": "2.35 (kaggle-runtime-receipt.json)",
+  "limits": "Not built inside Kaggle's image (the pod has no Docker). Rust/Cargo.lock sources are unchanged between the build commit and the archive commit; the archive manifest binds the module by SHA-256."
+}

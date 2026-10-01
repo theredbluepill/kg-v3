@@ -376,7 +376,7 @@ impl FlatBuffers {
     }
 }
 
-fn row_bytes(row: &ObsRowMut<'_>) -> Vec<u8> {
+pub(super) fn row_bytes(row: &ObsRowMut<'_>) -> Vec<u8> {
     let mut bytes = Vec::new();
     for value in row.tile_kind.iter() {
         bytes.extend(value.to_le_bytes());

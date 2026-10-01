@@ -1,5 +1,58 @@
 # Change log
 
+## 2026-10-01 — Merge rule 2 beside rule 1 and A/B it on c50: no measurable gain
+
+Owner, verbatim: "if we do it right, it would be assistance, and absolutely no harm right?"; "OK go ahead to implement it."
+
+- **Merge.** `31c99619` merges `kg/rule2-late-invest` into `kg/submit-08bc` (`--no-ff`).
+  - Both switches are off by default and read strictly (`0`/unset off, `1` on, anything else raises).
+  - When both are on, rule 2 filters first and rule 1 then rewrites the final turn.
+  - Ruff, mypy, docs-fresh and 139 agent/ship tests passed (`ops/late-invest-2026-10-01/merge-checks.log`).
+- **A/B.** c50, fixed-shop engine, 48 games paired with the rule-1-only and no-rule games. Every block was logged.
+  - 0 errors or fallbacks. No-block games are identical to rule 1 alone.
+  - 24 `BUY_SEED WHEAT` orders were blocked in 16 games, and nothing else.
+  - W-L stayed 6-42. The margin change against rule 1 was −1 ± 21 per game: 8 games better, 8 worse, down to −220.
+  - The direct saving is only about 5 per game; the swings are trajectory divergence.
+- **Recommendation.** Rule 1 on and rule 2 off by default. No default was flipped, and nothing was submitted.
+
+See [[late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|the rule 2 Reference]] and `ops/late-invest-2026-10-01/ab-rule2/ab-rule2.md`.
+
+## 2026-10-01 — Add an optional final-turn liquidation rule and A/B it on c50
+
+Owner, verbatim: "the current kaggle submission didnt sell stuff at the last day?"
+
+- **The rule.** `4c99768a` adds `python/owl/kaggriculture/final_turn.py`, a stateless rule that is off by default.
+  - It acts only on observation step `episodeSteps - 2`.
+  - Product carriers on shed tiles DROP, and the market becomes one SELL per product for the full shed.
+  - BUY and HIRE orders are dropped, and the result is re-validated natively.
+  - It is wired through `KaggricultureAgent(final_turn_liquidation=...)` and the `KAGGRICULTURE_FINAL_TURN_LIQUIDATION` switch in `main.py`.
+- **Checks.** 11 unit tests. The non-slow suite passed 3,058, and ruff, mypy and docs-fresh were clean.
+- **A/B on c50.** 48 paired fixed-shop games against smaller_market_shock, cha22 and v56 (8 seeds × 2 seats).
+  - 0 errors or fallbacks.
+  - Only the step-718 action differed.
+  - The shed emptied: 20.2 units → 0.
+  - The margin changed by +874 ± 157 per game, with no game worse.
+  - W-L stayed 6-42.
+- **Not done.** Nothing was shipped or submitted, and shipping the rule on needs a default change.
+
+See [[final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|the final-turn liquidation Reference]].
+
+## 2026-10-01 — Add the rule 2 late-investment filter to the packaged agent (off by default)
+
+Owner, verbatim: "if we do it right, it would be assistance, and absolutely no harm right?"; "OK go ahead to implement it." Branch `kg/rule2-late-invest` (from `kg/submit-08bc` `7184b729`) adds `python/owl/kaggriculture/late_invest.py` and a `block_late_investments` flag (default off) on `KaggricultureAgent`. `main.py` enables it only with `KAGGRICULTURE_AGENT_BLOCK_LATE_INVESTMENTS=1`. The filter replaces a purchase with `[]` only when no play could sell its product by the last processed step. Thresholds are cited from Kaggle `kaggriculture.py` and `engine_rs/src/lib.rs`. `tests/kaggriculture/test_late_invest.py` (49 cases) checks the constants against the Kaggle module and the exact default thresholds. Its scripted Kaggle plays sell every last allowed purchase, and at the agent seam the default is byte-identical and the filtered action passes native validation. Five threshold mutations were killed. Ruff, mypy, docs-fresh and 126 agent/ship tests passed (`ops/late-invest-2026-10-01/checks.log`). No episode-level money effect is measured, and nothing is packaged or submitted. See [[late-investment-filter-drops-only-purchases-that-cannot-sell-in-time|the rule 2 Reference]].
+
+## 2026-10-01 — Rebuild the cached Kaggle native module without the fixed opponents
+
+The 08bc module `2bbdd2f0…` was built with default cargo features. The fixed-opponent controllers (EcoBot, E776, Cha22) were compiled in, and the 08bc submission (ref 56711278) shipped it. On pod `abl4mvr5w1mmn4` (CPU only, `nice -n 19`, live run untouched), `9a743fad` was rebuilt with `maturin build --release --compatibility linux --no-default-features`. The result is `3e5e4e55…664e`: 3,485,792 bytes, glibc max 2.35, 0 opponent strings, and `kaggriculture_opponent_bots() == ()`. `native-cache/manifest.json` makes it the default and keeps the old module under `superseded_modules` as "contains opponents, do not ship". On `b43260fb`, the 50M checkpoint was packaged without `--allow-fixed-opponents` into archive `7ba6dbb2…95db`. All 65 files and 210/210 tensors matched, and the 40-turn strict Kaggle-image episode qualified. Nothing was submitted. See [[kaggle-packaging-reuses-the-starter-submission-path|the packaging Reference]].
+
+## 2026-09-30 — Add a one-command Kaggle checkpoint packager and find opponents in the 08bc module
+
+Owner, verbatim: "the packaging is now more efficient or?" `be79f135` adds `scripts/package_checkpoint.sh`, the committed `native-cache/manifest.json` (custody of the cached 08bc module `2bbdd2f0…8e4`, source `9a743fad`; the `.so` is gitignored) and a README section. The script refuses a dirty tree or changed native sources ("must be rebuilt"), builds with both receipts and the checkpoint hash, re-hashes the archive, compares every model tensor, and runs a 40-turn strict Kaggle-image episode (`--full-episode` for 720). The 50M checkpoint (`0cc80065…a7c2`) packaged in 27.9 s: archive `dd024366…e142`, 65 files clean, 210/210 tensors equal, episode qualified. Finding: the 08bc module was built with default cargo features, so the fixed-opponent controllers (EcoBot, E776, Cha22) that `Cargo.toml` says the Kaggle build drops are compiled in; this explains its 14.3 MB. The script refuses it without `--allow-fixed-opponents`. Nothing was submitted. See [[kaggle-packaging-reuses-the-starter-submission-path|the packaging Reference]].
+
+## 2026-09-30 — Merge the Kaggle ship path onto main for the 08bc probe submission
+
+Owner, verbatim: "can you package the 08bc and submit to kaggle for probing? Note we have 4 submissions left, only use 1 of it." Branch `kg/submit-08bc` merges `kg/rebuild-7-4-ship` (`619349f`) into `origin/main` `07c8fc99`, because only main's config schema validates the PPO run's `reward_shaping` keys. The `observe.rs` conflict keeps both impl blocks. The builder manifest now records only the checkpoint file name (review E1). The agent test fixture carries main's full shaping keys. A strict 5-turn Mac load of 08bc (`08bc19ae…4600`) passed with 0 caught errors. The Linux build, the Kaggle-mode check and the single submission are later steps. See [[kaggle-packaging-reuses-the-starter-submission-path|the packaging Reference]].
+
 ## 2026-09-30 — Correct the A/A2 run ids, the h3lpxy6q sixths and two board wordings
 
 A review of `68202f10` (Reviewer: independent Claude subagent (substitute for Codex during its usage limit; owner-approved). Not a Codex verdict. REQUEST CHANGES) found two factual errors and two wording errors. The earlier entry below stays as written.
@@ -218,6 +271,25 @@ Owner, verbatim: "A is good + decrease the LR by half?", answering option "A. Ab
 - `train/reward_bank_mean` and `train/return_common_mean` measure the common mode that the zero-sum winner critic cannot represent. The critic is unchanged.
 
 Full `just prepare` exits 0: Rust 280 passed with 5 ignored plus the other crates, and Python 2,825 passed with 18 skipped, plus mypy, docs-lint and docs-fresh (`ops/rebuild-2026-09-29/reward-bank/prepare.log`). All 14 seam mutations are killed (`mutations.log` beside it). New [[decisions/add-absolute-own-bank-shaping-and-halve-the-recipe-j-learning-rates|term A Decision]]. Revised the [[references/reward-reuse-preserves-objective-and-critic-semantics|reward Reference]], the [[references/bc-fine-tune-presets-divide-both-learning-rates-by-ten|recipe-J preset Reference]] (reopened by the 4-rank collapse), the [[references/kaggriculture-configs-follow-isaiahs-scaling-6m-recipe|configs Reference]] and both indexes. For the owner: the cap binds at a bank of 25k, below the BC economy of about 73k. Nothing was trained, and no pod was touched.
+
+## 2026-09-30 — Validate the BC submission in Kaggle mode against `starter` in both seats
+
+Owner, verbatim: "Can you try use Phase7 work and try ship the BC agent to kaggle while A runs?" This checks the built archive (`00e67809…3839`, manifest `4872a2d3…4a94`, BC best `fd854587…6f51`) the way Kaggle runs it, before the owner decides on upload. On the pod, in `/root/ship/validate` only, the archive was unpacked fresh and all 65 manifest hashes checked. A new CPython 3.11.13 venv held only torch 2.6.0+cpu, numpy, pydantic, pyyaml and kaggle-environments 1.32.7. Runs used `nice -n 19`, no GPU, strict mode off and the fallback live. Results:
+
+- BC against `starter` in seat 0 and in seat 1: 720 steps, 0 bad statuses, 719 calls, 0 exceptions, 0 invalid raw actions and 0 fallbacks each. Banks were 39,981 against 3,636 and 33,352 against 3,596, so BC won both (one seed each; not a strength claim).
+- The env's own path, CLI `kaggle-environments run` self-play, gave the same zero counts.
+
+Timing: turn 0 took 1.22 to 1.32 s, which draws about 0.3 s from the 60 s overage bank. Steady turns had a mean of 0.122 s and a maximum of 0.26 s against the 1 s `actTimeout`, on pod CPUs rather than Kaggle hardware. Peak process RSS was 459 MiB, or 625 MiB for self-play. The scripts and receipts are in `ops/rebuild-2026-09-29/7.4-ship/validation/`, and the [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] gains a Kaggle-mode section. Nothing was uploaded or submitted.
+
+## 2026-09-30 — Build and validate the BC agent's Kaggle submission (Task 7.4 ship build)
+
+Owner, verbatim: "Can you try use Phase7 work and try ship the BC agent to kaggle while A runs?" On `kg/rebuild-7-4-ship` (the integration tip `4731c49` plus the approved 7.4 brief `aba04ff` and the agent commit `f66acf8`), `6c49863` binds a native build receipt into the builder's manifest. The builder makes `artifacts/7.4/submission.tar.gz` (24,704,468 bytes, SHA-256 `00e67809f9d4d3e40d477dc309be1df241dfc7c71a92f36241401ba873be3839`, gitignored) from the BC best (`fd854587…6f51`, slimmed to model weights) and a CPython 3.11 abi3 x86-64 `rs.abi3.so`. The `.so` was built on the pod in `/root/ship` from clean `f66acf8`; its highest glibc symbol is 2.35, and the image has 2.35. The pod was touched only in `/root/ship`, CPU-only. Three strict episodes through Kaggle's real loader qualified with 719 calls per seat, zero bad statuses, exceptions, invalid raw actions or fallback PASSes:
+
+- a fresh container of the local Kaggle image under emulation on the Mac;
+- pod self-play;
+- pod BC-versus-`starter`.
+
+Pod steady p99 was about 0.125 s at 1 thread with no vCPU quota. That is not Kaggle hardware. The harness ignored `--episode-steps`, so the Mac container check ran a full episode instead of 4 steps. The flag is now forwarded, with a test. `just py-prepare`: 2,777 passed, 18 skipped. The receipts are in `ops/rebuild-2026-09-29/7.4/`. The [[references/kaggle-packaging-reuses-the-starter-submission-path|packaging Reference]] is revised from design to built, and lists the deviations from the brief: no in-image Docker build, no replay-parity or latency-benchmark receipts, no W&B. Nothing was uploaded or submitted; that is the owner's decision.
 
 ## 2026-09-30 — Land the 8-rank prep (halved checkpoint interval, recipe-J presets, 8-rank run package) onto the integration
 

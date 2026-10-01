@@ -1,0 +1,170 @@
+{
+  "verdict": "PASS",
+  "archive": {
+    "path": "artifacts/7.4/submission.tar.gz (gitignored; pod copy /root/ship/submission.tar.gz)",
+    "bytes": 24704468,
+    "sha256": "00e67809f9d4d3e40d477dc309be1df241dfc7c71a92f36241401ba873be3839",
+    "manifest_sha256": "4872a2d3f982320ed79559eb3b6146bf11fd7667eec0f82f12153ad6f1714a94",
+    "bc_checkpoint_original_sha256": "fd8545872aca59c70e273e9655055e1104cd719588364f463ae87b0d488e6f51",
+    "built_from": "6c49863 (7122254 changes no archive input: python, src, engine_rs, Cargo/uv locks and tomls unchanged)",
+    "unpacked_to": "/root/ship/validate/agent (fresh tar -xzf; 65 manifest files re-hashed: 0 mismatched, 0 missing, 0 unlisted; du 28,936 KiB)"
+  },
+  "runtime": {
+    "host": "RunPod pod abl4mvr5w1mmn4 (AMD EPYC 9535, 256 CPUs, glibc 2.39), /root/ship/validate only",
+    "venv": "fresh uv venv /root/ship/validate/venv-kaggle, CPython 3.11.13 (/usr/bin/python3.11), installed only torch==2.6.0+cpu numpy==2.4.6 pydantic==2.12.4 pyyaml==6.0.3 kaggle-environments==1.32.7 and their dependencies (receipts/venv-kaggle-freeze.txt, 121 lines); no owl wheel, maturin or pytest",
+    "isolation": "CUDA_VISIBLE_DEVICES empty, OMP/MKL threads 1, nice -n 19; cwd /root/ship/validate/work (not the agent dir); KAGGRICULTURE_AGENT_STRICT unset (Kaggle mode, fallback live)",
+    "kaggriculture_py_sha256": "bc8a54879ef02c7ea64b8b333d6a976f0ea65c4949149d01f463f23bccee653e",
+    "not_kaggle": "torch cpu wheel instead of the image's 2.6.0+cu124; not the Kaggle image or hardware; no vCPU quota"
+  },
+  "limits_from_env": {
+    "episodeSteps": 720,
+    "actTimeout_s": 1.0,
+    "initial_remainingOverageTime_s": 60.0,
+    "runTimeout_s": 1200.0
+  },
+  "vs_starter": [
+    {
+      "receipt": "receipts/episode-starter-seat0-seed20261000.json",
+      "seed": 20261000,
+      "packaged_seat": 0,
+      "ok": true,
+      "completion": {
+        "steps": 720,
+        "final_statuses": [
+          "DONE",
+          "DONE"
+        ],
+        "bad_statuses": 0
+      },
+      "legality": {
+        "calls": 719,
+        "exceptions": 0,
+        "invalid_raw_actions": 0
+      },
+      "timing_s": {
+        "turn0": 1.316167,
+        "steady_mean": 0.121988,
+        "steady_p99": 0.124865,
+        "steady_max": 0.259879,
+        "calls_over_actTimeout": 1,
+        "overage_used": 0.316167,
+        "min_remaining_overage": 59.683833
+      },
+      "memory_mib": {
+        "process_peak_vmhwm": 459.3,
+        "process_start_rss": 17.2
+      },
+      "banks": {
+        "packaged": 39981.0,
+        "starter": 3636.0
+      },
+      "winner": "packaged agent",
+      "fallback": {
+        "caught_errors": 0,
+        "budget_passes": 0,
+        "pass_returns": 0,
+        "stderr_calls": 0
+      },
+      "wall_s": 90.68,
+      "replay_sha256": "6a8e52ec78bb5e91b2868d40029b3182f02672d871e6830684834eaf7a4ed084"
+    },
+    {
+      "receipt": "receipts/episode-starter-seat1-seed20261001.json",
+      "seed": 20261001,
+      "packaged_seat": 1,
+      "ok": true,
+      "completion": {
+        "steps": 720,
+        "final_statuses": [
+          "DONE",
+          "DONE"
+        ],
+        "bad_statuses": 0
+      },
+      "legality": {
+        "calls": 719,
+        "exceptions": 0,
+        "invalid_raw_actions": 0
+      },
+      "timing_s": {
+        "turn0": 1.26438,
+        "steady_mean": 0.120578,
+        "steady_p99": 0.122931,
+        "steady_max": 0.24186,
+        "calls_over_actTimeout": 1,
+        "overage_used": 0.26438,
+        "min_remaining_overage": 59.73562
+      },
+      "memory_mib": {
+        "process_peak_vmhwm": 457.7,
+        "process_start_rss": 17.3
+      },
+      "banks": {
+        "packaged": 33352.0,
+        "starter": 3596.0
+      },
+      "winner": "packaged agent",
+      "fallback": {
+        "caught_errors": 0,
+        "budget_passes": 0,
+        "pass_returns": 0,
+        "stderr_calls": 0
+      },
+      "wall_s": 89.554,
+      "replay_sha256": "2e5fc42d69dcea61d4a8eba07c931020446b720005b8303f60aba3c8f31eb084"
+    }
+  ],
+  "env_validation_path": {
+    "receipt": "receipts/cli-run-self-seed20261002-summary.json",
+    "ok": true,
+    "what": "kaggle-environments CLI `run --environment kaggriculture --agents main.py main.py` (self-play, Kaggle's validation-episode shape); 1.32.7 ships no dedicated validate/test action",
+    "steps": 720,
+    "final_statuses": [
+      "DONE",
+      "DONE"
+    ],
+    "bad_statuses": 0,
+    "banks": [
+      62278.0,
+      61665.0
+    ],
+    "winner": "seat0",
+    "seats": {
+      "0": {
+        "calls": 719,
+        "turn0_s": 1.219287,
+        "steady_mean_s": 0.122264,
+        "steady_max_s": 0.162373,
+        "calls_over_actTimeout": 1,
+        "min_remaining_overage_s": 59.780713,
+        "fallback_lines": 0,
+        "pass_returns": 0,
+        "stderr_calls": 0
+      },
+      "1": {
+        "calls": 719,
+        "turn0_s": 0.456797,
+        "steady_mean_s": 0.121985,
+        "steady_max_s": 0.136046,
+        "calls_over_actTimeout": 0,
+        "min_remaining_overage_s": 60.0,
+        "fallback_lines": 0,
+        "pass_returns": 0,
+        "stderr_calls": 0
+      }
+    },
+    "process_peak_vmhwm_mib": 624.8,
+    "replay_sha256": "434611f510fa6393e3bbb2ccaf42270c3bd501452163357f994f4c422238f3c3",
+    "logs_sha256": "73a97e67927038992f53f5a512aa7a4a1187945fba5f0e90ddd7e0898989b651"
+  },
+  "not_done": [
+    "no upload or submission (owner decision)",
+    "no run in the Kaggle image for these three episodes (the earlier 7.4 container self-play is ops/rebuild-2026-09-29/7.4/kaggle-image-episode-self-seed7.json)",
+    "no Kaggle-hardware timing",
+    "no W&B telemetry"
+  ],
+  "bulk_on_pod_only": "/root/ship/validate/out/*.json replays (7.3 MB, 7.4 MB, 18.3 MB) and CLI agent logs (229 KB); hashes above",
+  "pod_run_window_utc": "2026-09-30T03:02:15Z..2026-09-30T03:08:20Z",
+  "training_run_untouched": "no GPU use; only /root/ship/validate written; no process outside it signalled",
+  "submitted": false
+}

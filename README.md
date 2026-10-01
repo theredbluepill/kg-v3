@@ -105,6 +105,46 @@ marking a still-alive player as gone, if a player has no current planets and
 all of their fleets are below that threshold, the encoder keeps that player's
 single largest fleet in the encoded observation.
 
+## Kaggriculture checkpoint packaging (Mac, cached native module)
+
+Package one PPO checkpoint without rebuilding the Linux `owl.rs` module:
+
+```sh
+scripts/package_checkpoint.sh CHECKPOINT CONFIG OUT_DIR [--full-episode] [--allow-fixed-opponents]
+```
+
+The script refuses a dirty tree, and refuses when any native source
+(`src/`, `engine_rs/`, `opponents_rs/`, `Cargo.toml`, `Cargo.lock`, `build.rs`,
+`rust-toolchain.toml`, `.cargo/`, `pyproject.toml [tool.maturin]`) differs from
+the commit the cached module was built from. It then:
+
+1. copies the cached module into `native-cache/<sha256>.abi3.so` (gitignored,
+   seeded once from the manifest's `seed_from`) and checks its SHA-256 against
+   the committed `native-cache/manifest.json` (source commit, glibc max, full
+   build receipt);
+2. runs `scripts/build_kaggriculture_submission.py` in a builder venv
+   (`~/.cache/kg-v3/package-venv-py311-torch2.6.0`, made once with uv) with both
+   receipts and the checkpoint's SHA-256;
+3. extracts the archive, re-hashes every file against its `manifest.json` and
+   compares every model tensor with the checkpoint's `model` state;
+4. plays a strict self-play episode of the extracted archive in the local Kaggle
+   image named by `ops/rebuild-2026-09-29/7.4/kaggle-runtime-receipt.json`
+   (image id checked; `linux/amd64` emulated, `--network none --cpus=1.6
+   --memory=6.5g`): 40 turns by default, 720 with `--full-episode`;
+5. writes `OUT_DIR/PACKAGE.md` with hashes, checks and per-stage wall times.
+
+The cached module (`3e5e4e55…`, 3.5 MB, built from `9a743fad`) is the Kaggle
+feature build: `--no-default-features`, so no fixed-opponent controllers. The
+manifest keeps the earlier 08bc module (`2bbdd2f0…`, 14.3 MB) under
+`superseded_modules` as "contains opponents, do not ship": it was built with
+default cargo features, so EcoBot, E776 and Cha22 are compiled in, and the 08bc
+submission shipped it. The script refuses any cached module whose manifest
+records opponents unless `--allow-fixed-opponents` is passed, and records the
+flag. After a native change, rebuild the module on a
+Linux x86-64 host (`maturin build --release --compatibility linux
+--no-default-features` with CPython 3.11, highest glibc symbol at most 2.35),
+then replace `native-cache/manifest.json`. Nothing here uploads or submits.
+
 ## Orbit Wars reference
 
 The Rust rules engine targets the installed `kaggle-environments` Orbit Wars

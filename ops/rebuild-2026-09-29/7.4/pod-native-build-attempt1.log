@@ -1,0 +1,61 @@
+2026-09-30T02:05:31Z
+rustc 1.97.0-nightly (e9e32aca5 2026-04-17)
+cargo 1.97.0-nightly (eb94155a9 2026-04-09)
+maturin 1.15.0
+📦 Including license file `LICENSE`
+🍹 Building a mixed python/rust project
+🐍 Found CPython 3.11 at /root/ship/venv/bin/python
+🔗 Found pyo3 bindings with abi3-py3.11 support
+📡 Using build options features from pyproject.toml
+   Compiling target-lexicon v0.13.5
+   Compiling autocfg v1.5.0
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling unicode-ident v1.0.24
+   Compiling libc v0.2.186
+   Compiling crossbeam-utils v0.8.21
+   Compiling serde_core v1.0.228
+   Compiling heck v0.5.0
+   Compiling zmij v1.0.21
+   Compiling getrandom v0.4.2
+   Compiling num-traits v0.2.19
+   Compiling matrixmultiply v0.3.10
+   Compiling serde v1.0.228
+   Compiling serde_json v1.0.149
+   Compiling cfg-if v1.0.4
+   Compiling equivalent v1.0.2
+   Compiling rawpointer v0.2.1
+   Compiling rayon-core v1.13.0
+   Compiling hashbrown v0.17.0
+   Compiling pyo3-build-config v0.28.3
+   Compiling crossbeam-epoch v0.9.18
+   Compiling syn v2.0.117
+   Compiling rand_core v0.10.1
+   Compiling crossbeam-deque v0.8.6
+   Compiling num-integer v0.1.46
+   Compiling num-complex v0.4.6
+   Compiling memchr v2.8.0
+   Compiling num-bigint v0.4.8
+   Compiling cpufeatures v0.3.0
+   Compiling once_cell v1.21.4
+   Compiling itoa v1.0.18
+   Compiling chacha20 v0.10.0
+   Compiling either v1.15.0
+   Compiling pyo3-ffi v0.28.3
+   Compiling pyo3-macros-backend v0.28.3
+   Compiling pyo3 v0.28.3
+   Compiling numpy v0.28.0
+   Compiling owl v0.1.0 (/root/ship/src)
+   Compiling ndarray v0.17.2
+   Compiling rustc-hash v2.1.2
+   Compiling rand v0.10.1
+   Compiling rayon v1.12.0
+   Compiling indexmap v2.14.0
+   Compiling num-rational v0.4.2
+   Compiling serde_derive v1.0.228
+   Compiling pyo3-macros v0.28.3
+   Compiling kaggriculture-engine v0.1.0 (/root/ship/src/engine_rs)
+    Finished `release` profile [optimized] target(s) in 35.56s
+💥 maturin failed
+  Caused by: Error ensuring manylinux_2_28 compliance
+  Caused by: Your library is not manylinux_2_28 compliant because of the presence of too-recent versioned symbols: ["libc.so.6 offending versions: GLIBC_2.34, GLIBC_2.33, GLIBC_2.30", "libm.so.6 offending versions: GLIBC_2.35, GLIBC_2.29"]. Consider building in a manylinux docker container

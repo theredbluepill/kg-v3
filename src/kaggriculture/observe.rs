@@ -3,7 +3,8 @@
 //! All observation fields are written from one admitted snapshot; diagnostic
 //! row checks are separate from the release write path.
 use kaggriculture_engine::{
-    Config, Counts, Farm, Game, PrivateState, PublicState, StepMetrics, StepSnapshot, TraceHeader,
+    Config, Counts, Farm, Game, Inventory, PrivateState, PublicState, StepMetrics, StepSnapshot,
+    TraceHeader,
 };
 use serde_json::{Map, Value};
 use std::fmt;
@@ -88,6 +89,19 @@ impl Seat {
         match self {
             Self::Zero => 0,
             Self::One => 1,
+        }
+    }
+
+    /// Checked seat from an untrusted player index.
+    pub fn from_index(index: i64) -> Result<Self, ObserveError> {
+        match index {
+            0 => Ok(Self::Zero),
+            1 => Ok(Self::One),
+            _ => Err(ObserveError::new(
+                ObserveErrorKind::State,
+                "seat",
+                format!("must be 0 or 1, received {index}"),
+            )),
         }
     }
 }
@@ -208,6 +222,87 @@ impl PreparedObservation {
     /// The validated pre-step snapshot a hosted fixed opponent acts on.
     pub fn snapshot(&self) -> &StepSnapshot {
         &self.snapshot
+    }
+}
+
+/// Keys of one live seat's legal view, in the only accepted set.
+const SEAT_VIEW_KEYS: [&str; 3] = ["configuration", "public", "private"];
+
+fn seat_view_part(view: &mut Map<String, Value>, key: &str) -> Result<Value, ObserveError> {
+    view.remove(key)
+        .ok_or_else(|| ObserveError::new(ObserveErrorKind::State, format!("view.{key}"), "missing"))
+}
+
+fn seat_view_error(key: &str, error: serde_json::Error) -> ObserveError {
+    ObserveError::new(
+        ObserveErrorKind::State,
+        format!("view.{key}"),
+        error.to_string(),
+    )
+}
+
+impl PreparedObservation {
+    /// Admit one seat's legal view for `write_seat`.
+    ///
+    /// A live agent never sees the rival's private state. A shape-valid empty
+    /// private (one empty inventory per rival actor, empty shed and seeds)
+    /// stands in for it; `write_seat` reads only the own seat's private state,
+    /// so the own row is independent of this placeholder. The whole snapshot
+    /// passes the same admission as the two-seat path.
+    ///
+    /// `view` is a JSON object with exactly the keys `configuration` (the game
+    /// configuration envelope), `public` (step, day, hour, farms, market, town)
+    /// and `private` (this seat's shed, seeds and inventories).
+    pub fn from_seat_view(view: &str, seat: Seat) -> Result<Self, ObserveError> {
+        let parsed: Value = serde_json::from_str(view).map_err(|error| {
+            ObserveError::new(ObserveErrorKind::State, "view", error.to_string())
+        })?;
+        let Value::Object(mut view) = parsed else {
+            return Err(ObserveError::new(
+                ObserveErrorKind::Shape,
+                "view",
+                "expected a JSON object",
+            ));
+        };
+        if let Some(key) = view
+            .keys()
+            .find(|key| !SEAT_VIEW_KEYS.contains(&key.as_str()))
+        {
+            return Err(ObserveError::new(
+                ObserveErrorKind::State,
+                format!("view.{key}"),
+                "unknown view key",
+            ));
+        }
+        let configuration: Config =
+            serde_json::from_value(seat_view_part(&mut view, "configuration")?)
+                .map_err(|error| seat_view_error("configuration", error))?;
+        let public: PublicState = serde_json::from_value(seat_view_part(&mut view, "public")?)
+            .map_err(|error| seat_view_error("public", error))?;
+        let own: PrivateState = serde_json::from_value(seat_view_part(&mut view, "private")?)
+            .map_err(|error| seat_view_error("private", error))?;
+        let config = Arc::new(ObservationConfig::new(&configuration)?);
+        // Bounds the rival hand count before the placeholder is allocated.
+        validate_public_context(&public, &config)?;
+        let rival_actors = public.farms[1 - seat.index()].hands.len() + 1;
+        let rival = PrivateState {
+            shed: Counts::new(),
+            seeds: Counts::new(),
+            inventories: vec![Inventory::new(); rival_actors],
+        };
+        let privates = match seat {
+            Seat::Zero => vec![own, rival],
+            Seat::One => vec![rival, own],
+        };
+        let snapshot = StepSnapshot {
+            public,
+            privates,
+            done: false,
+            statuses: Vec::new(),
+            rewards: Vec::new(),
+        };
+        validate_snapshot(&snapshot, &config)?;
+        Ok(Self { snapshot, config })
     }
 }
 
