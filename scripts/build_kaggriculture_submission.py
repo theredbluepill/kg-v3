@@ -11,6 +11,12 @@ abi3, Linux x86-64, glibc no newer than the image's) and passed in; this script
 checks its ELF header and its highest required glibc symbol version. The
 working tree must be clean: the manifest's source identity is the checked-out
 commit. Nothing here uploads or submits.
+
+Kaggle sets no environment variables, so the entrypoint's endgame rules are off
+in a shipped package unless baked in: ``--final-turn-liquidation`` rewrites the
+staged ``main.py`` to construct the agent with rule 1
+(``owl.kaggriculture.final_turn``) on. The repository's ``main.py`` keeps
+reading the environment; rule 2 (late-investment filter) is never baked.
 """
 
 from __future__ import annotations
@@ -44,6 +50,17 @@ ENTRYPOINT = Path("python") / "kaggriculture_main.py"
 EXCLUDED_NAMES = {"__pycache__", ".DS_Store"}
 EXCLUDED_SUFFIXES = (".pyc", ".so", ".dylib", ".pyd")
 ELF_X86_64 = 62
+FINAL_TURN_ENV_LINE = "    final_turn_liquidation=final_turn.enabled_from_env(),\n"
+FINAL_TURN_BAKED_LINE = (
+    "    final_turn_liquidation=True,  # baked on: build --final-turn-liquidation\n"
+)
+FINAL_TURN_ENV_DOC = (
+    "Kaggle sets no such variable, so a shipped package runs with both rules off.\n"
+)
+FINAL_TURN_BAKED_DOC = (
+    "This packaged copy was built with ``--final-turn-liquidation``: rule 1 is\n"
+    "baked on and ignores its variable. Kaggle sets no variable, so rule 2 is off.\n"
+)
 
 
 @dataclass(frozen=True)
@@ -116,6 +133,25 @@ def _load_extract_model_weights() -> Any:
     return module
 
 
+def bake_final_turn_liquidation(entrypoint: str) -> str:
+    """Return ``entrypoint`` with rule 1 constructed on instead of read from env.
+
+    Each replaced text must occur exactly once, so an edited entrypoint fails
+    the build instead of shipping an unpatched or half-patched ``main.py``.
+    """
+    for old, new in (
+        (FINAL_TURN_ENV_LINE, FINAL_TURN_BAKED_LINE),
+        (FINAL_TURN_ENV_DOC, FINAL_TURN_BAKED_DOC),
+    ):
+        count = entrypoint.count(old)
+        if count != 1:
+            raise ValueError(
+                f"{ENTRYPOINT} must contain {old.strip()!r} exactly once, found {count}"
+            )
+        entrypoint = entrypoint.replace(old, new)
+    return entrypoint
+
+
 def _copy_package(source: Path, destination: Path) -> None:
     def ignore(directory: str, names: list[str]) -> set[str]:
         del directory
@@ -172,6 +208,7 @@ def build(
     expected_checkpoint_sha256: str | None = None,
     max_glibc: str = MAX_GLIBC,
     size_limit_bytes: int = SIZE_LIMIT_MIB * 1024 * 1024,
+    final_turn_liquidation: bool = False,
 ) -> dict[str, Any]:
     """Stage, check and write the archive; return its manifest."""
     checkpoint_sha256 = sha256_file(checkpoint)
@@ -205,7 +242,10 @@ def build(
     with tempfile.TemporaryDirectory() as temporary:
         stage = Path(temporary) / "submission"
         stage.mkdir()
-        shutil.copy2(REPO_ROOT / ENTRYPOINT, stage / "main.py")
+        entrypoint = (REPO_ROOT / ENTRYPOINT).read_text()
+        if final_turn_liquidation:
+            entrypoint = bake_final_turn_liquidation(entrypoint)
+        (stage / "main.py").write_text(entrypoint)
         _copy_package(REPO_ROOT / "python" / "owl", stage / "owl")
         shutil.copy2(native_module, stage / "owl" / "rs.abi3.so")
         model_root = stage / "models" / "primary"
@@ -246,6 +286,10 @@ def build(
                 "sha256": files["main.py"]["sha256"],
                 "deterministic": True,
                 "threads": 1,
+                "final_turn_liquidation": (
+                    "baked on" if final_turn_liquidation else "environment (off)"
+                ),
+                "block_late_investments": "environment (off)",
             },
             "locks": {
                 "Cargo.lock": sha256_file(REPO_ROOT / "Cargo.lock"),
@@ -294,6 +338,11 @@ def _parse_args() -> argparse.Namespace:
         "must equal the staged module's",
     )
     parser.add_argument("--max-glibc", default=MAX_GLIBC)
+    parser.add_argument(
+        "--final-turn-liquidation",
+        action="store_true",
+        help="bake rule 1 (final-turn liquidation) on in the packaged main.py",
+    )
     return parser.parse_args()
 
 
@@ -321,6 +370,7 @@ def main() -> None:
         native_receipt=native_receipt,
         expected_checkpoint_sha256=args.expected_checkpoint_sha256,
         max_glibc=args.max_glibc,
+        final_turn_liquidation=args.final_turn_liquidation,
     )
     if source_identity(REPO_ROOT) != identity:
         raise RuntimeError("source tree changed during the build")
@@ -332,6 +382,9 @@ def main() -> None:
                 "sha256": sha256_file(args.output),
                 "source_commit": manifest["source"]["commit"],
                 "checkpoint_sha256": manifest["checkpoint"]["original_sha256"],
+                "final_turn_liquidation": manifest["entrypoint"][
+                    "final_turn_liquidation"
+                ],
                 "native_glibc_symbol_max": manifest["native_module"][
                     "glibc_symbol_max"
                 ],

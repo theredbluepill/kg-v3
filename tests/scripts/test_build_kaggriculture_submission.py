@@ -98,9 +98,51 @@ def test_archive_layout_manifest_and_slim_checkpoint(tmp_path: Path) -> None:
     assert manifest["source"] == {"commit": IDENTITY.commit, "tree": IDENTITY.tree}
     assert manifest["native_module"]["glibc_symbol_max"] == "2.17"
     assert manifest["entrypoint"]["deterministic"] is True
+    assert manifest["entrypoint"]["final_turn_liquidation"] == "environment (off)"
+    assert manifest["entrypoint"]["block_late_investments"] == "environment (off)"
     assert manifest["runtime_target"] == {"python": "3.11.13"}
     for member in members.values():
         assert (member.uid, member.gid, member.mtime) == (0, 0, 0)
+
+
+def _main_py(archive: Path) -> str:
+    with tarfile.open(archive) as tar:
+        member = tar.extractfile("main.py")
+        assert member is not None
+        return member.read().decode()
+
+
+def test_final_turn_liquidation_is_baked_into_the_packaged_entrypoint(
+    tmp_path: Path,
+) -> None:
+    inputs = _inputs(tmp_path)
+    manifest = builder.build(**inputs, final_turn_liquidation=True)
+    packaged = _main_py(inputs["output"])
+    repo_main = (
+        Path(__file__).parents[2] / "python" / "kaggriculture_main.py"
+    ).read_text()
+    assert "final_turn.enabled_from_env()" in repo_main
+    assert packaged == builder.bake_final_turn_liquidation(repo_main)
+    assert packaged.count("final_turn_liquidation=True,") == 1
+    assert "final_turn.enabled_from_env()" not in packaged
+    # Rule 2 stays on its environment switch, which Kaggle never sets.
+    assert packaged.count("block_late_investments=late_invest.enabled_from_env(),") == 1
+    assert manifest["entrypoint"]["final_turn_liquidation"] == "baked on"
+    assert manifest["entrypoint"]["block_late_investments"] == "environment (off)"
+    assert manifest["files"]["main.py"]["sha256"] == _sha(packaged.encode())
+    compile(packaged, "main.py", "exec")
+
+
+def test_final_turn_bake_refuses_an_unexpected_entrypoint() -> None:
+    line = builder.FINAL_TURN_ENV_LINE
+    doc = builder.FINAL_TURN_ENV_DOC
+    with pytest.raises(ValueError, match="found 0"):
+        builder.bake_final_turn_liquidation(doc)
+    with pytest.raises(ValueError, match="found 2"):
+        builder.bake_final_turn_liquidation(line + line + doc)
+    baked = builder.bake_final_turn_liquidation(doc + line)
+    with pytest.raises(ValueError, match="found 0"):
+        builder.bake_final_turn_liquidation(baked)
 
 
 def test_native_receipt_is_bound_to_the_staged_module(tmp_path: Path) -> None:

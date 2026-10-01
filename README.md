@@ -110,7 +110,7 @@ single largest fleet in the encoded observation.
 Package one PPO checkpoint without rebuilding the Linux `owl.rs` module:
 
 ```sh
-scripts/package_checkpoint.sh CHECKPOINT CONFIG OUT_DIR [--full-episode] [--allow-fixed-opponents]
+scripts/package_checkpoint.sh CHECKPOINT CONFIG OUT_DIR [--full-episode] [--final-turn-liquidation] [--allow-fixed-opponents]
 ```
 
 The script refuses a dirty tree, and refuses when any native source
@@ -132,6 +132,14 @@ the commit the cached module was built from. It then:
    (image id checked; `linux/amd64` emulated, `--network none --cpus=1.6
    --memory=6.5g`): 40 turns by default, 720 with `--full-episode`;
 5. writes `OUT_DIR/PACKAGE.md` with hashes, checks and per-stage wall times.
+
+Kaggle sets no environment variables, so the agent's optional endgame rules are
+off in a package by default. `--final-turn-liquidation` bakes rule 1
+(`owl.kaggriculture.final_turn`) on in the packaged `main.py` only; the
+repository's `python/kaggriculture_main.py` still reads
+`KAGGRICULTURE_FINAL_TURN_LIQUIDATION`. Rule 2 (late-investment filter) stays
+on its environment switch, so it is off. The inner manifest's `entrypoint`
+records both, and the verify stage checks the packaged `main.py` against the flag.
 
 The cached module (`3e5e4e55…`, 3.5 MB, built from `9a743fad`) is the Kaggle
 feature build: `--no-default-features`, so no fixed-opponent controllers. The

@@ -1,5 +1,28 @@
 # Change log
 
+## 2026-10-01 — Package the 60M checkpoint with rule 1 baked on (not submitted)
+
+Owner, verbatim: "you can package, but not need to submit 60m".
+
+- `scripts/package_checkpoint.sh ... --full-episode --final-turn-liquidation` at `de26cd68` built `artifacts/60m-r1/submission.tar.gz` (sha256 `7b72346f…8db9`, 24,725,520 bytes) from checkpoint `20b1f795…1a2` with the clean native module `3e5e4e55…`.
+- Verify passed (67 files, 210/210 tensors). The strict 720-turn Kaggle-image self-play episode qualified with 0 faults; at step 718 both seats sold the full shed and the shed ended at 0.
+- Receipts are in `ops/package-60m-2026-10-01/`. Nothing was submitted.
+
+See [[final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|the rule 1 Reference]].
+
+## 2026-10-01 — Add a packager option that bakes rule 1 on for the 60M package
+
+Owner, verbatim: "you can package, but not need to submit 60m"; earlier, rule 1 is to be applied and "let's not apply rule2."
+
+- **Option.** `kg/package-60m` adds `--final-turn-liquidation` to `scripts/build_kaggriculture_submission.py` and `scripts/package_checkpoint.sh`.
+  - It rewrites only the packaged `main.py` to construct the agent with rule 1 on; the repository default stays off.
+  - Rule 2 stays on its environment switch, so it is off on Kaggle.
+  - The inner manifest records both rules, and the verify stage checks the packaged `main.py` against the flag.
+- **Checks.** 13 builder tests (2 new) and the 141-test merge-check list passed; ruff, mypy and docs-freshness were clean.
+- Nothing was submitted.
+
+See [[final-turn-liquidation-sells-the-shed-on-the-last-resolved-turn|the rule 1 Reference]].
+
 ## 2026-10-01 — Merge rule 2 beside rule 1 and A/B it on c50: no measurable gain
 
 Owner, verbatim: "if we do it right, it would be assistance, and absolutely no harm right?"; "OK go ahead to implement it."

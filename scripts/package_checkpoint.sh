@@ -8,9 +8,11 @@
 #              source commit; cached module present with the recorded SHA-256;
 #              local Kaggle image id equal to the runtime receipt's
 #   build      scripts/build_kaggriculture_submission.py with both receipts and
-#              the checkpoint's expected SHA-256
+#              the checkpoint's expected SHA-256 (and --final-turn-liquidation
+#              when given, which bakes rule 1 on in the packaged main.py)
 #   verify     fresh extract; every file re-hashed against the inner manifest;
-#              archive weights compared tensor by tensor with checkpoint["model"]
+#              archive weights compared tensor by tensor with checkpoint["model"];
+#              packaged main.py's rule 1/rule 2 wiring checked against the flag
 #   image      strict self-play episode of the extracted archive in the local
 #              Kaggle image (amd64 emulated, no network, 1.6 CPUs, 6.5 GB):
 #              40 turns by default (--episode-steps), 720 with --full-episode
@@ -27,6 +29,9 @@ Options:
   --episode-steps N
                    bound for the short episode (default 40)
   --seed N         episode seed (default 7)
+  --final-turn-liquidation
+                   bake rule 1 (final-turn liquidation) on in the packaged
+                   main.py; rule 2 stays on its environment switch (off)
   --allow-fixed-opponents
                    accept a cached module whose manifest records the
                    fixed-opponent controllers compiled in (see README)
@@ -42,6 +47,7 @@ full_episode=0
 episode_steps=40
 seed=7
 allow_fixed_opponents=0
+final_turn_liquidation=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h | --help) usage; exit 0 ;;
@@ -49,6 +55,7 @@ while [[ $# -gt 0 ]]; do
     --episode-steps) episode_steps="$2"; shift 2 ;;
     --seed) seed="$2"; shift 2 ;;
     --allow-fixed-opponents) allow_fixed_opponents=1; shift ;;
+    --final-turn-liquidation) final_turn_liquidation=1; shift ;;
     -*) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
     *) positional+=("$1"); shift ;;
   esac
@@ -158,12 +165,15 @@ end preflight
 
 # ---- build -----------------------------------------------------------------
 begin build
+build_flags=()
+[[ $final_turn_liquidation -eq 1 ]] && build_flags+=(--final-turn-liquidation)
 PYTHONPATH="$REPO/python" "$PY" "$REPO/scripts/build_kaggriculture_submission.py" \
   --checkpoint "$CHECKPOINT" --config "$CONFIG" \
   --native-module "$SO_CACHE" \
   --native-receipt "$OUT_DIR/native-module-receipt.json" \
   --runtime-receipt "$RUNTIME_RECEIPT" \
   --expected-checkpoint-sha256 "$CKPT_SHA" \
+  ${build_flags[@]+"${build_flags[@]}"} \
   --output "$ARCHIVE" > "$OUT_DIR/build.json"
 ARCHIVE_SHA="$(shasum -a 256 "$ARCHIVE" | cut -d' ' -f1)"
 ARCHIVE_BYTES="$(stat -f %z "$ARCHIVE")"
@@ -177,11 +187,11 @@ AGENT="$OUT_DIR/agent"
 rm -rf "$AGENT"
 mkdir -p "$AGENT"
 tar -xzf "$ARCHIVE" -C "$AGENT"
-"$PY" - "$AGENT" "$CHECKPOINT" "$CKPT_SHA" "$SO_SHA" "$HEAD_COMMIT" > "$OUT_DIR/verify.json" <<'EOF'
+"$PY" - "$AGENT" "$CHECKPOINT" "$CKPT_SHA" "$SO_SHA" "$HEAD_COMMIT" "$final_turn_liquidation" > "$OUT_DIR/verify.json" <<'EOF'
 import hashlib, json, sys
 from pathlib import Path
 import torch
-agent, checkpoint, ckpt_sha, so_sha, head = Path(sys.argv[1]), *sys.argv[2:]
+agent, checkpoint, ckpt_sha, so_sha, head, ft = Path(sys.argv[1]), *sys.argv[2:]
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 manifest_path = agent / "manifest.json"
@@ -199,6 +209,16 @@ checks = {
     "source.commit": (manifest["source"]["commit"], head),
 }
 problems += [f"{k}: {a} != {b}" for k, (a, b) in checks.items() if a != b]
+main_py = (agent / "main.py").read_text()
+rule1_baked = main_py.count("final_turn_liquidation=True,") == 1 and "final_turn.enabled_from_env()" not in main_py
+rule1_env = main_py.count("final_turn_liquidation=final_turn.enabled_from_env(),") == 1
+rule2_env = main_py.count("block_late_investments=late_invest.enabled_from_env(),") == 1
+if not (rule1_baked if ft == "1" else rule1_env):
+    problems.append(f"main.py rule 1 wiring does not match --final-turn-liquidation={ft}")
+if not rule2_env:
+    problems.append("main.py rule 2 is not on its environment switch")
+if manifest["entrypoint"]["final_turn_liquidation"] != ("baked on" if ft == "1" else "environment (off)"):
+    problems.append(f"manifest entrypoint.final_turn_liquidation={manifest['entrypoint']['final_turn_liquidation']!r}")
 original = torch.load(checkpoint, map_location="cpu", weights_only=True)["model"]
 slim = torch.load(agent / "models/primary/checkpoint.pt", map_location="cpu", weights_only=True)
 if set(slim) != {"model"}:
@@ -219,6 +239,8 @@ report = {
     "parameters": int(sum(t.numel() for t in slim.values())),
     "slim_sha256": manifest["checkpoint"]["slim_sha256"],
     "config_sha256": manifest["checkpoint"]["config_sha256"],
+    "final_turn_liquidation": manifest["entrypoint"]["final_turn_liquidation"],
+    "block_late_investments": manifest["entrypoint"]["block_late_investments"],
     "problems": problems,
 }
 print(json.dumps(report, indent=2))
@@ -253,6 +275,7 @@ CMD_FLAGS=""
 [[ $full_episode -eq 1 ]] || CMD_FLAGS+=" --episode-steps $episode_steps"
 CMD_FLAGS+=" --seed $seed"
 [[ $allow_fixed_opponents -eq 1 ]] && CMD_FLAGS+=" --allow-fixed-opponents"
+[[ $final_turn_liquidation -eq 1 ]] && CMD_FLAGS+=" --final-turn-liquidation"
 # ---- receipt -----------------------------------------------------------------
 TOTAL="$(perl -e "printf '%.1f', $(now) - $t_total")"
 "$PY" - "$OUT_DIR" "$RECEIPT_NAME" "$image_status" <<EOF
@@ -280,6 +303,7 @@ lines = [
     "| Config | \`$CONFIG\`, sha256 \`$CONFIG_SHA\` |",
     "| Source | commit \`$HEAD_COMMIT\`, clean tree |",
     "| Native module | \`$SO_SHA\` from native-cache (source commit \`$SO_SOURCE\`, native sources identical at HEAD); fixed-opponent controllers compiled in: $SO_OPPONENTS |",
+    f"| Endgame rules in main.py | rule 1 final-turn liquidation: {verify['final_turn_liquidation']}; rule 2 late-investment filter: {verify['block_late_investments']} |",
     "| Builder | \`$PY\` |",
     "| Kaggle image | \`$IMAGE\` (\`$IMAGE_ID\`), linux/amd64 emulated, --network none --cpus=1.6 --memory=6.5g |",
     "",
